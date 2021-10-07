@@ -28,7 +28,8 @@
   numDem <- numer/denom
   sp1 <- vapply(x , function(i) a[1]*i , numeric(1)) + a[2]*numDem
   sp2 <- vapply(x , function(i) l[1]*i , numeric(1)) + l[2]*numDem
-  HR <- unname(exp( b + sp1 + sp2)/exp(sp1))
+  # HR <- unname(exp( b + sp1 + sp2)/exp(sp1))
+  HR <- unname(exp( b + sp2))
 }
 
 #' Generate HR values for a 1 unit increase in a variable at specified points of another variable
@@ -129,7 +130,7 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
       }
       myBoot <- boot::boot(data = data, statistic = .bootHRcubSpline, x = x , model = model
                   , R = R , parallel = parallel, var1 = var1 , var2 = var2 )
-      SE <- summary(myBoot)$bootSE
+      SE <- apply(myBoot$t , 2 , sd)
       HRci <- t(vapply( seq_len(length(x)) , function(idx) {
         bci <- boot::boot.ci(boot.out = myBoot,  index = idx , type = ci.boot.method , conf = conf)
         if(ci.boot.method %in% "norm"){
