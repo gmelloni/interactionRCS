@@ -1,6 +1,10 @@
 .bootHRcubSpline <- function(data, idx , x , model , var1 , var2){
   df <- data[idx, ]
-  mymodel <- cph(model$sformula, data=df)
+  # mymodel <- cph(model$sformula, data=df)
+  mycall <- model$call
+  mycall <- pryr::modify_call(mycall , list(data=df))
+  # mymodel <- cph(model$sformula, data=df)
+  mymodel <- eval(mycall)
   coefMod <- coef(mymodel)
   ##### SHOULD THE NODES BE GLOBAL OR RUN SPECIFIC? HERE SPECIFIC
   # if(missing(k)){
@@ -64,8 +68,11 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
       data <- model$x
     }
   }
-  if(!isTRUE(all.equal(mean(data[[var1]] , na.rm =TRUE),0))){
-    warning("var1 is not centered on 0, results are reported for a 0 to 1 change in var1")
+  # Check that var1 is a 0/1, if not check if the mean is 0
+  if(!all(data[[var1]] %in% c(0,1,NA))){
+    if(!isTRUE(all.equal(mean(data[[var1]] , na.rm =TRUE),0))){
+      warning("var1 is not centered on 0 nor a 0/1 variable, results are always reported for a 0 to 1 change in var1.")
+    }
   }
 
   coefMod <- coef(model)
@@ -74,9 +81,9 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
   k2k1 <- (k[2] - k[1])/(k[3] - k[2])
   k3k1 <- (k[3] - k[1])/(k[3] - k[2])
   # Extract parameters
-  # beta1 <- coefMod["score.sd[1]"]
+  # beta1 <- coefMod["score.sd"]
   # alph <- coefMod[c("age" , "age'")]
-  # lamb <- coefMod[c("score.sd[1] * age" , "score.sd[1] * age'")]
+  # lamb <- coefMod[c("score.sd * age" , "score.sd * age'")]
   # Could be rcs(var2)*var1 or var1*rcs(var2). We search for both versions
   myvars <- intersect( c(var1 , var2
                         , paste0(var2 , "'")
@@ -103,16 +110,20 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
   if(ci){
     if(ci.method == "delta"){
       vcovMod <- vcov(model)
-      HRci <- t(vapply( seq_len(x) , function(i) {
+      HRci <- t(vapply( seq_len(length(x)) , function(i) {
         x_i <- x[i]
         numDem_i <- numDem[i]
-        myform <- paste0("~(x1 + x2*" , x_i
-                       , " + x3*" , numDem_i
-                       , " + x10*" , x_i
-                       , " + x11*" , numDem_i
-                       , ")/(x2*" , x_i
-                       , " + x3*" , numDem_i , ")")
-        SE<-msm::deltamethod(as.formula(myform), coefMod, vcovMod)
+        myform <- paste0("~(x1 + x2*(" , x_i
+                       , ") + x3*(" , numDem_i
+                       , ") + x10*(" , x_i
+                       , ") + x11*(" , numDem_i
+                       , "))/(x2*(" , x_i
+                       , ") + x3*(" , numDem_i , "))")
+        SE <- NULL
+        try(SE<-msm::deltamethod(as.formula(myform), coefMod, vcovMod) , silent = TRUE)
+        if(is.null(SE)){
+          return(c(HR[i] , NA , NA , NA))
+        }
         up<-exp(log(HR[i])+qnorm( 1 - (1-conf)/2)*SE)
         lo<-exp(log(HR[i])-qnorm( 1 - (1-conf)/2)*SE)
         c(HR[i] , lo , up , SE)

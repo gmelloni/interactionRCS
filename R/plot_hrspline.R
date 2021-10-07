@@ -8,11 +8,11 @@
 #' @param main plot title
 #' @return simple splined plot of your var2 values by HR of
 #' @export
-plot.HRSpline <- function(df , xlab = "" , main = "" , log = TRUE){
+plot.HRSpline <- function(df , xlab = "" , main = "" , log = FALSE){
   plot( df$Value , df$HR
         , type="n" , xlab = xlab
         , ylab = if(log) "HR (log scale)" else "HR"
-        , log = log
+        , log = if(log) "y" else ""
         , ylim = c(min(df$CI_L , na.rm = TRUE),max(df$CI_U , na.rm = TRUE))
         , main = "")
   lines( pspline::sm.spline(df$Value , df$HR) , col = "dodgerblue" , lty = 1 , lwd = 3 )
