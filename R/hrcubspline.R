@@ -93,6 +93,7 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
                         , paste(paste0(var2 , "'"),var1 , sep = " * "))
                       , names(coefMod))
   mycoef <- coefMod[  myvars ]
+  mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
   a <- mycoef[ c(var2 , paste0(var2,"'"))]
   b <- mycoef[ var1 ]
   l <- mycoef[ setdiff(myvars , c(var2 , paste0(var2,"'") , var1)) ]
@@ -109,16 +110,19 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
 
   if(ci){
     if(ci.method == "delta"){
+      # This creates a vector like x1 , x2 , x3 , x7 , x8
+      # that tells you the position of the regressor as it appears in the model
+      xNum <- paste0("x" , mycoefWhich)
       vcovMod <- vcov(model)
       HRci <- t(vapply( seq_len(length(x)) , function(i) {
         x_i <- x[i]
         numDem_i <- numDem[i]
-        myform <- paste0("~(x1 + x2*(" , x_i
-                       , ") + x3*(" , numDem_i
-                       , ") + x10*(" , x_i
-                       , ") + x11*(" , numDem_i
-                       , "))/(x2*(" , x_i
-                       , ") + x3*(" , numDem_i , "))")
+        myform <- paste0("~(", xNum[1] , " + " , xNum[2] , "*(" , x_i
+                       , ") + " , xNum[3] , "*(" , numDem_i
+                       , ") + " , xNum[4] , "*(" , x_i
+                       , ") + " , xNum[5] , "*(" , numDem_i
+                       , "))/(" , xNum[2] , "*(" , x_i
+                       , ") + " , xNum[3] , "*(" , numDem_i , "))")
         SE <- NULL
         try(SE<-msm::deltamethod(as.formula(myform), coefMod, vcovMod) , silent = TRUE)
         if(is.null(SE)){
