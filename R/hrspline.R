@@ -3,7 +3,7 @@
   mycall <- model$call
   mycall <- pryr::modify_call(mycall , list(data=df))
   mymodel <- eval(mycall)
-  coefMod <- coef(model)
+  coefMod <- coef(mymodel)
   myvars <- intersect( c(var1 , var2
                          , paste(var1 , var2 , sep = ":")
                          , paste(var2 , var1 , sep = ":"))

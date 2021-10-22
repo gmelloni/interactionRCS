@@ -36,15 +36,21 @@ plot.HRSpline(myHR[1:30 , ] , xlab = "Age")
 # Interaction Model
 myformula <- Surv(time, status) ~ sex*age + ph.karno + ph.ecog
 modInt <- coxph(myformula , data = lung2 , x = TRUE)
+# Delta
 HRSpline( x = 30:80
              , model = modInt , data = lung2 , var1 ="sex", var2="age" , units=1
-             , center = 0, ci=TRUE , conf = 0.95 , ci.method = "bootstrap"
-             , ci.boot.method = "norm" , R = 1000 , parallel = "multicore")
+             , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta"
+             , ci.boot.method = "norm" , R = 100 , parallel = "multicore")
+# Boot
+HRSpline( x = 30:80
+          , model = modInt , data = lung2 , var1 ="sex", var2="age" , units=1
+          , center = 0, ci=TRUE , conf = 0.95 , ci.method = "bootstrap"
+          , ci.boot.method = "norm" , R = 100 , parallel = "multicore")
 # Compare to cubic spline model
 myformula <- Surv(time, status) ~ sex*rcs(age,3) + ph.karno + ph.ecog
 modCub <- cph(myformula , data = lung2 , x = TRUE)
 HRcubSpline( x = 30:80
-          , model = modInt , data = lung2 , var1 ="sex", var2="age" , units=1
+          , model = modCub , data = lung2 , var1 ="sex", var2="age" , units=1
           , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta"
           , ci.boot.method = "norm" , R = 100 , parallel = "multicore")
 
