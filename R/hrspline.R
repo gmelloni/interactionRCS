@@ -52,25 +52,27 @@ HRSpline <- function(x , model , data , var1 , var2
                          , paste(var2 , var1 , sep = ":"))
                        , names(coefMod))
   mycoef <- coefMod[  myvars ]
+  mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
   intTerm <- mycoef[ length(myvars) ]
   var1Term <- mycoef[ var1 ]
+  var2Term <- mycoef[ var2 ]
   HR <- unname(exp( var1Term + x*intTerm))
   if(ci){
     if(ci.method == "delta"){
-      # TO DO!!
-      warning("Delta Method not implemented yet")
-      return(HR)
+      # This creates a vector like x1 , x2 , x3 , x7 , x8
+      # that tells you the position of the regressor as it appears in the model
+      xNum <- paste0("x" , mycoefWhich)
       vcovMod <- vcov(model)
-      HRci <- t(vapply( seq_len(x) , function(i) {
+      HRci <- t(vapply( seq_len(length(x)) , function(i) {
         x_i <- x[i]
         numDem_i <- numDem[i]
-        myform <- paste0("~(x1 + x2*" , x_i
-                         , " + x3*" , numDem_i
-                         , " + x10*" , x_i
-                         , " + x11*" , numDem_i
-                         , ")/(x2*" , x_i
-                         , " + x3*" , numDem_i , ")")
-        SE<-msm::deltamethod(as.formula(myform), coefMod, vcovMod)
+        myform <- paste0("~(", xNum[1] , " + " , xNum[2] , "*(" , x_i
+                         , ") + " , xNum[3] , "*(" , x_i , "))/(" , xNum[2] , "*(" , x_i ,"))")
+        SE <- NULL
+        try(SE<-msm::deltamethod(as.formula(myform), coefMod, vcovMod) , silent = TRUE)
+        if(is.null(SE)){
+          return(c(HR[i] , NA , NA , NA))
+        }
         up<-exp(log(HR[i])+qnorm( 1 - (1-conf)/2)*SE)
         lo<-exp(log(HR[i])-qnorm( 1 - (1-conf)/2)*SE)
         c(HR[i] , lo , up , SE)
