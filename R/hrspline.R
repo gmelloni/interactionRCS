@@ -3,15 +3,16 @@
   mycall <- model$call
   mycall <- pryr::modify_call(mycall , list(data=df))
   mymodel <- eval(mycall)
-  coefMod <- coef(mymodel)
+  coefMod <- coef(model)
   myvars <- intersect( c(var1 , var2
                          , paste(var1 , var2 , sep = ":")
                          , paste(var2 , var1 , sep = ":"))
                        , names(coefMod))
   mycoef <- coefMod[  myvars ]
+  mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
   intTerm <- mycoef[ length(myvars) ]
   var1Term <- mycoef[ var1 ]
-  # HR <- unname(exp( b + sp1 + sp2)/exp(sp1))
+  var2Term <- mycoef[ var2 ]
   HR <- unname(exp( var1Term + x*intTerm))
 }
 
@@ -66,8 +67,9 @@ HRSpline <- function(x , model , data , var1 , var2
       HRci <- t(vapply( seq_len(length(x)) , function(i) {
         x_i <- x[i]
         numDem_i <- numDem[i]
-        myform <- paste0("~(", xNum[1] , " + " , xNum[2] , "*(" , x_i
-                         , ") + " , xNum[3] , "*(" , x_i , "))/(" , xNum[2] , "*(" , x_i ,"))")
+        # myform <- paste0("~(", xNum[1] , " + " , xNum[2] , "*(" , x_i
+        #                  , ") + " , xNum[3] , "*(" , x_i , "))/(" , xNum[2] , "*(" , x_i ,"))")
+        myform <- paste0("~(", xNum[1] , " + " , xNum[3] , "*(" , x_i , "))")
         SE <- NULL
         try(SE<-msm::deltamethod(as.formula(myform), coefMod, vcovMod) , silent = TRUE)
         if(is.null(SE)){
