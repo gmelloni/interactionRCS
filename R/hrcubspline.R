@@ -109,6 +109,7 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
   # HR <- unname(exp( b*x1 + sp1 + sp2*x1)/exp(b*x2 + sp1 + sp2*x2))
 
   if(ci){
+    alpha <- qnorm( 1 - (1-conf)/2)
     if(ci.method == "delta"){
       # This creates a vector like x1 , x2 , x3 , x7 , x8
       # that tells you the position of the regressor as it appears in the model
@@ -128,8 +129,8 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
         if(is.null(SE)){
           return(c(HR[i] , NA , NA , NA))
         }
-        up<-exp(log(HR[i])+qnorm( 1 - (1-conf)/2)*SE)
-        lo<-exp(log(HR[i])-qnorm( 1 - (1-conf)/2)*SE)
+        up<-exp(log(HR[i])+alpha*SE)
+        lo<-exp(log(HR[i])-alpha*SE)
         c(HR[i] , lo , up , SE)
       } , numeric(4)))
       HRci <- cbind( Value = x , HRci)
