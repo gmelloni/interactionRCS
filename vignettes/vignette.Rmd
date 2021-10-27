@@ -24,7 +24,7 @@ plot.HR<-dget("plot_hrspline.R")
 
 ## Introduction
 
-The `interactionHR` package is designed to facilitate results interpretation and presentation from a COX regression model where an interaction between the main predictor of interest $X$ (binary or continuous) and another continuous covariate $Z$ has been specified. Specifically, the package will provide point estimates of the HR for the main predictor $X$ over levels of $Z$, allowing for settings where $Z$ is flexibly modeled with restricted cubic splines, and provide a graphical display of this interaction. Two methods for deriving and plotting confidence intervals are also implemented, including the delta method and bootstrap.
+The `interactionHR` package is designed to facilitate interpretation and presentation of results from a COX regression model where an interaction between the main predictor of interest $X$ (binary or continuous) and another continuous covariate $Z$ has been specified. Specifically, the package will provide point estimates of the HR for the main predictor $X$ over levels of $Z$, allowing for settings where $Z$ is flexibly modeled with restricted cubic splines, and provide a graphical display of this interaction. Two methods for deriving and plotting confidence intervals are also implemented, including the delta method and bootstrap.
 
 Theoretical background is provided in the Appendix at the end of this vignette.
 
