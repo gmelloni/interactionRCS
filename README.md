@@ -4,7 +4,7 @@
 ---
 
 ### Description
-`interactionHR` estimates of the hazard Ratio for one covariate of interest (binary or continuous) over levels of a second continuous 
+`interactionHR` estimates the Hazard Ratio for one covariate of interest (binary or continuous) over levels of a second continuous 
   covariate with which an interaction has been specified in a Cox model with `cph`. In particular, `interactionHR` allows for
   basic interaction assessment (i.e. log-linear interaction model where a product term between the two predictors is included) 
   as well as settings where the second covariate is flexibly modeled with restricted cubic splines. Confidence intervals for 
