@@ -11,14 +11,18 @@ myformula <- Surv(time, status) ~ ph.karno + sex + rcs(age, 3)*sex
 model <- cph(myformula , data = lung2 , x = TRUE , y=TRUE)
 # Bootstrap Method returns wrong results!!!
 # Here sex is recognized as a binary and no warning is triggered
-myHR <- HRcubSpline( x = c(30,50,60,70,80)
+myHR <- HRcubSpline( x = 40:80
              , model = model , data = lung2 , var1 ="sex", var2="age" , units=1
              , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta"
              , ci.boot.method = "norm" , R = 100 , parallel = "multicore")
-myHR2 <- HRcubSpline( x = c(30,50,60,70,80)
+myHR2 <- HRcubSpline( x = 40:80
                      , model = model , data = lung2 , var1 ="sex", var2="age" , units=1
                      , center = 0, ci=TRUE , conf = 0.95 , ci.method = "bootstrap"
-                     , ci.boot.method = "perc" , R = 500 , parallel = "multicore")
+                     , ci.boot.method = "perc" , R = 100 , parallel = "multicore")
+par(mfrow=c(1,2))
+plot.HRSpline(myHR , xlab = "Age" , main = "Delta")
+plot.HRSpline(myHR2 , xlab = "Age" , main = "Bootstrap")
+
 # Test parameters
 x = c(30,50,60,70,80)
 model=model
@@ -33,8 +37,6 @@ ci.method="bootstrap"
 ci.boot.method="perc"
 parallel = "multicore"
 R = 100
-
-# plot.HRSpline(myHR2 , xlab = "Age")
 
 # Interaction Model
 myformula <- Surv(time, status) ~ sex*age + ph.karno + ph.ecog
@@ -74,6 +76,10 @@ myHR <- HRcubSpline( x = 40:55
              , model = mod1 , data = data_for_fig1 , var1 ="score.sd", var2="age" , units=1
              , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta"
              , ci.boot.method = "norm" , R = 10 , parallel = "multicore")
+myHR2 <- HRcubSpline( x = 40:55
+                     , model = mod1 , data = data_for_fig1 , var1 ="score.sd", var2="age" , units=1
+                     , center = 0, ci=TRUE , conf = 0.95 , ci.method = "bootstrap"
+                     , ci.boot.method = "norm" , R = 3 , parallel = "multicore")
 # Params for troubleshooting
 x = 30:60
 model = mod1
@@ -90,4 +96,6 @@ parallel = "multicore"
 R = 100
 
 # Try plot
-plot.HRSpline(myHR , xlab = "Age")
+par(mfrow=c(1,2))
+plot.HRSpline(myHR , xlab = "Age" , main = "delta")
+plot.HRSpline(myHR2 , xlab = "Age" , main = "bootstrap")

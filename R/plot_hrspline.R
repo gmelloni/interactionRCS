@@ -14,7 +14,7 @@ plot.HRSpline <- function(df , xlab = "" , main = "" , log = FALSE){
         , ylab = if(log) "HR (log scale)" else "HR"
         , log = if(log) "y" else ""
         , ylim = c(min(df$CI_L , na.rm = TRUE),max(df$CI_U , na.rm = TRUE))
-        , main = "")
+        , main = main)
   lines( pspline::sm.spline(df$Value , df$HR) , col = "dodgerblue" , lty = 1 , lwd = 3 )
   lines( pspline::sm.spline(df$Value , df$CI_L) , col = "grey" , lty = 2 , lwd = 2 )
   lines( pspline::sm.spline(df$Value , df$CI_U) , col = "grey" , lty = 2 , lwd = 2 )
