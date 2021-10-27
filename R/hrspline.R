@@ -1,8 +1,10 @@
 .bootHRSpline <- function(data, idx , x , model , var1 , var2){
   df <- data[idx, ]
   mycall <- model$call
-  mycall <- pryr::modify_call(mycall , list(data=df))
+  mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  myformula <- model$sformula
   mymodel <- eval(mycall)
+  # mymodel <- cph(model$sformula, data=df)
   coefMod <- coef(mymodel)
   if("cph" %in% class(model)){
     separator <- " * "
@@ -54,6 +56,9 @@ HRSpline <- function(x , model , data , var1 , var2
       data <- model$x
     }
   }
+  if(!all(c(var1,var2) %in% colnames(data) )){
+    stop("var1 or var2 not present in the data")
+  }
   coefMod <- coef(model)
   # Different styles to name the interaction term between coxph and cph
   if("cph" %in% class(model)){
@@ -65,8 +70,9 @@ HRSpline <- function(x , model , data , var1 , var2
                          , paste(var1 , var2 , sep = separator)
                          , paste(var2 , var1 , sep = separator))
                        , names(coefMod))
+  if(length(myvars)!=3) stop("either var1 or var2 is not in the interaction!")
   mycoef <- coefMod[  myvars ]
-  mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
+  mycoefWhich <- vapply( myvars , function(v) which( names(coefMod) %in% v ) , numeric(1))
   intTerm <- mycoef[ length(myvars) ]
   var1Term <- mycoef[ var1 ]
   var2Term <- mycoef[ var2 ]
@@ -75,12 +81,12 @@ HRSpline <- function(x , model , data , var1 , var2
     alpha <- qnorm( 1 - (1-conf)/2)
     if(ci.method=="exact"){
       stop("not implemented yet")
-        SEgeneral <- sqrt( sum( c( diag(model$var)[c(mycoefWhich[var1] ,mycoefWhich[ myvars[3]])]
+        SEgeneral <- sqrt( sum( c( diag(model$var)[c(mycoefWhich[var1] ,mycoefWhich[ mycoefWhich[ myvars[3]] ])]
                                    , 2*model$var[mycoefWhich[var1] ,mycoefWhich[ myvars[3]]]) ) )
-        SEvar1 <- sqrt(diag(model$var))
+        SEvar1 <- sqrt(diag(model$var))[mycoefWhich[var1]]
         # wrong
-        # HR_L <- unname(exp( var1Term - alpha*SEvar1 + x*(intTerm- alpha*SEgeneral) ))
-        # HR_U <- unname(exp( var1Term + alpha*SEvar1 + x*(intTerm+ alpha*SEgeneral) ))
+        HR_L <- unname(exp( var1Term - alpha*SEvar1 + x*(intTerm- alpha*SEgeneral) ))
+        HR_U <- unname(exp( var1Term + alpha*SEvar1 + x*(intTerm+ alpha*SEgeneral) ))
         # also wrong
         # HR_L <- unname(exp( var1Term + x*(intTerm) - alpha*SEgeneral ))
         # HR_U <- unname(exp( var1Term + x*(intTerm) + alpha*SEgeneral ))
@@ -126,17 +132,17 @@ HRSpline <- function(x , model , data , var1 , var2
                            , x = x , model = model
                            , R = R , parallel = parallel
                            , var1 = var1 , var2 = var2 )
+      SE <- apply(myBoot$t , 2 , sd)
       HRci <- t(vapply( seq_len(length(x)) , function(idx) {
-        bci <- boot::boot.ci(boot.out = myBoot,  index = idx
-                             , type = ci.boot.method , conf = conf)
+        bci <- boot::boot.ci(boot.out = myBoot,  index = idx , type = ci.boot.method , conf = conf)
         if(ci.boot.method %in% "norm"){
-          c(bci$t0 , bci$normal[2] , bci$normal[3])
+          c(bci$t0 , bci$normal[2] , bci$normal[3] , SE = SE[idx])
         } else {
-          c(bci$t0 , bci[[4]][4] , bci[[4]][5])
+          c(bci$t0 , bci[[4]][4] , bci[[4]][5] , SE = SE[idx])
         }
-      } , numeric(3)))
+      } , numeric(4)))
       HRci <- cbind(x , HRci)
-      colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U")
+      colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U" , "SE")
       rownames(HRci) <- x
       return(as.data.frame(HRci))
     } else {

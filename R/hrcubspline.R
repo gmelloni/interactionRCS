@@ -2,7 +2,8 @@
   df <- data[idx, ]
   # mymodel <- cph(model$sformula, data=df)
   mycall <- model$call
-  mycall <- pryr::modify_call(mycall , list(data=df))
+  mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  myformula <- model$sformula
   # mymodel <- cph(model$sformula, data=df)
   mymodel <- eval(mycall)
   coefMod <- coef(mymodel)
@@ -14,26 +15,26 @@
     k3k1 <- (k[3] - k[1])/(k[3] - k[2])
   # }
   # k <- attributes(rcs(df[[var2]], 3))$parms # like this knots are unique for every run
-  myvars <- intersect( c(var1 , var2
-                         , paste0(var2 , "'")
-                         , paste(var1 , var2 , sep = " * ")
-                         , paste(var2 , var1 , sep = " * ")
-                         , paste(var1 , paste0(var2 , "'") , sep = " * ")
-                         , paste(paste0(var2 , "'"),var1 , sep = " * "))
-                       , names(coefMod))
-  mycoef <- coefMod[  myvars ]
-  a <- mycoef[ c(var2 , paste0(var2,"'"))]
-  b <- mycoef[ var1 ]
-  l <- mycoef[ setdiff(myvars , c(var2 , paste0(var2,"'") , var1)) ]
-  numer <- vapply(x , function(i) {
-    max(i - k[1],0)^3  - (max(i - k[2],0)^3)*k3k1 + (max(i - k[3],0)^3)*k2k1
-  } , numeric(1))
-  denom <- (k[3] - k[1])^2
-  numDem <- numer/denom
-  sp1 <- vapply(x , function(i) a[1]*i , numeric(1)) + a[2]*numDem
-  sp2 <- vapply(x , function(i) l[1]*i , numeric(1)) + l[2]*numDem
-  # HR <- unname(exp( b + sp1 + sp2)/exp(sp1))
-  HR <- unname(exp( b + sp2))
+    myvars <- intersect( c(var1 , var2
+                           , paste0(var2 , "'")
+                           , paste(var1 , var2 , sep = " * ")
+                           , paste(var2 , var1 , sep = " * ")
+                           , paste(var1 , paste0(var2 , "'") , sep = " * ")
+                           , paste(paste0(var2 , "'"),var1 , sep = " * "))
+                         , names(coefMod))
+    mycoef <- coefMod[  myvars ]
+    mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
+    a <- mycoef[ c(var2 , paste0(var2,"'"))]
+    b <- mycoef[ var1 ]
+    l <- mycoef[ setdiff(myvars , c(var2 , paste0(var2,"'") , var1)) ]
+    numer <- vapply(x , function(i) {
+      max(i - k[1],0)^3  - (max(i - k[2],0)^3)*k3k1 + (max(i - k[3],0)^3)*k2k1
+    } , numeric(1))
+    denom <- (k[3] - k[1])^2
+    numDem <- numer/denom
+    sp1 <- vapply(x , function(i) a[1]*i , numeric(1)) + a[2]*numDem
+    sp2 <- vapply(x , function(i) l[1]*i , numeric(1)) + l[2]*numDem
+    HR <- unname(exp( b + sp2))
 }
 
 #' Generate HR values for a 1 unit increase in a variable at specified points of another variable
@@ -66,6 +67,9 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
       stop("Missing data")
     } else {
       data <- model$x
+      if(!all(c(var1,var2) %in% colnames(data) )){
+        stop("var1 or var2 not present in th data")
+      }
     }
   }
   # Check that var1 is a 0/1, if not check if the mean is 0
@@ -92,6 +96,7 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
                         , paste(var1 , paste0(var2 , "'") , sep = " * ")
                         , paste(paste0(var2 , "'"),var1 , sep = " * "))
                       , names(coefMod))
+  if(length(myvars)!=5) stop("either var1 or var2 is not in the interaction!")
   mycoef <- coefMod[  myvars ]
   mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
   a <- mycoef[ c(var2 , paste0(var2,"'"))]
@@ -118,12 +123,15 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
       HRci <- t(vapply( seq_len(length(x)) , function(i) {
         x_i <- x[i]
         numDem_i <- numDem[i]
-        myform <- paste0("~(", xNum[1] , " + " , xNum[2] , "*(" , x_i
-                       , ") + " , xNum[3] , "*(" , numDem_i
-                       , ") + " , xNum[4] , "*(" , x_i
-                       , ") + " , xNum[5] , "*(" , numDem_i
-                       , "))/(" , xNum[2] , "*(" , x_i
-                       , ") + " , xNum[3] , "*(" , numDem_i , "))")
+        # myform <- paste0("~(", xNum[1] , " + " , xNum[2] , "*(" , x_i
+        #                , ") + " , xNum[3] , "*(" , numDem_i
+        #                , ") + " , xNum[4] , "*(" , x_i
+        #                , ") + " , xNum[5] , "*(" , numDem_i
+        #                , "))/(" , xNum[2] , "*(" , x_i
+        #                , ") + " , xNum[3] , "*(" , numDem_i , "))")
+        myform <- paste0("~(", xNum[1] , " + ", xNum[4] , "*(" , x_i
+                         , ") + " , xNum[5] , "*(" , numDem_i
+                         , "))")
         SE <- NULL
         try(SE<-msm::deltamethod(as.formula(myform), coefMod, vcovMod) , silent = TRUE)
         if(is.null(SE)){

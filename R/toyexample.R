@@ -7,18 +7,18 @@ lung2 <- lung
 lung2$ph.karno <- as.vector(scale(lung2$ph.karno))
 lung2$ph.ecog <- as.vector(scale(lung2$ph.ecog))
 lung2$sex <- ifelse(lung2$sex==2 , 0 , 1)
-myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age, 3)*sex
-model <- cph(myformula , data = lung , x = TRUE , y=TRUE)
+myformula <- Surv(time, status) ~ ph.karno + sex + rcs(age, 3)*sex
+model <- cph(myformula , data = lung2 , x = TRUE , y=TRUE)
 # Bootstrap Method returns wrong results!!!
 # Here sex is recognized as a binary and no warning is triggered
 myHR <- HRcubSpline( x = c(30,50,60,70,80)
              , model = model , data = lung2 , var1 ="sex", var2="age" , units=1
              , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta"
-             , ci.boot.method = "norm" , R = 1000 , parallel = "multicore")
+             , ci.boot.method = "norm" , R = 100 , parallel = "multicore")
 myHR2 <- HRcubSpline( x = c(30,50,60,70,80)
                      , model = model , data = lung2 , var1 ="sex", var2="age" , units=1
                      , center = 0, ci=TRUE , conf = 0.95 , ci.method = "bootstrap"
-                     , ci.boot.method = "norm" , R = 500 , parallel = "multicore")
+                     , ci.boot.method = "perc" , R = 500 , parallel = "multicore")
 # Test parameters
 x = c(30,50,60,70,80)
 model=model
@@ -33,9 +33,8 @@ ci.method="bootstrap"
 ci.boot.method="perc"
 parallel = "multicore"
 R = 100
-# var1 <- "sex"
 
-plot.HRSpline(myHR , xlab = "Age")
+# plot.HRSpline(myHR2 , xlab = "Age")
 
 # Interaction Model
 myformula <- Surv(time, status) ~ sex*age + ph.karno + ph.ecog
@@ -55,7 +54,7 @@ HRSpline( x = c(30,50,60,70,80)
 HRSpline( x = c(30,50,60,70,80)
           , model = modInt , data = lung2 , var1 ="sex", var2="age" , units=1
           , center = 0, ci=TRUE , conf = 0.95 , ci.method = "bootstrap"
-          , ci.boot.method = "perc" , R = 500 , parallel = "multicore")
+          , ci.boot.method = "perc" , R = 100 , parallel = "multicore")
 # Compare to cubic spline model
 myformula <- Surv(time, status) ~ sex*rcs(age,3) + ph.karno + ph.ecog
 modCub <- cph(myformula , data = lung2 , x = TRUE)
