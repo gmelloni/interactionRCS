@@ -31,10 +31,10 @@ plot.HR <- function(df , xlab = "" , main = "" , log = FALSE
         , log = if(log) "y" else ""
         , ylim = c(min(df$CI_L , na.rm = TRUE),max(df$CI_U , na.rm = TRUE))
         , main = main)
-  if(line1) { if(log) abline(h=0 , lty = 2 , lwd = 2) else abline(h=1 , lty = 2 , lwd = 2)}
+  if(line1) { if(log) abline(h=0 , lty = 3 , lwd = 2 , col = "gray") else abline(h=1 , lty = 3 , lwd = 2 , col = "gray")}
   lines( pspline::sm.spline(df$Value , df$HR) , col = "dodgerblue" , lty = 1 , lwd = 3 )
   if("CI_L" %in% colnames(df) && "CI_U" %in% colnames(df)){
-    lines( pspline::sm.spline(df$Value , df$CI_L) , col = "grey" , lty = 2 , lwd = 2 )
-    lines( pspline::sm.spline(df$Value , df$CI_U) , col = "grey" , lty = 2 , lwd = 2 )
+    lines( pspline::sm.spline(df$Value , df$CI_L) , col = "black" , lty = 2 , lwd = 2 )
+    lines( pspline::sm.spline(df$Value , df$CI_U) , col = "black" , lty = 2 , lwd = 2 )
   }
 }

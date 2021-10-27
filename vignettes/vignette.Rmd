@@ -1,0 +1,200 @@
+---
+title: "Introduction to the *interactionHR* package"
+subtitle: "Giorgio Melloni, Sabina Murphy, Andrea Bellavia"
+author: "[TIMI study group](https://timi.org/)"
+date: 'Last update: `r format(Sys.Date(),format="%B %d, %Y")`'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+setwd("Z:/AndreaB/interactionHR")
+knitr::opts_chunk$set(echo = TRUE)
+
+library(survival)
+library(haven)
+library(rms)
+library(pkgload)
+library(readxl)
+
+umaru <- read.csv("umaru.csv")
+rcsHR<-dget("hrcubicspline.R")
+loglinHR<-dget("hrspline.R")
+plot.HR<-dget("plot_hrspline.R")
+```
+
+## Introduction
+
+The `interactionHR` package is designed to facilitate results interpretation and presentation from a COX regression model where an interaction between the main predictor of interest $X$ (binary or continuous) and another continuous covariate $Z$ has been specified. Specifically, the package will provide point estimates of the HR for the main predictor $X$ over levels of $Z$, allowing for settings where $Z$ is flexibly modeled with restricted cubic splines, and provide a graphical display of this interaction. Two methods for deriving and plotting confidence intervals are also implemented, including the delta method and bootstrap.
+
+Theoretical background is provided in the Appendix at the end of this vignette.
+
+## How to use the interactionHR package 
+
+Functions within the `interactionHR` package require that a Cox model has already been estimated and model results be provided as an object. Because of its flexibility in dealing with restricted cubic splines, `interactionHR` requires the Cox model to be fitted with the `cph` function of  `rms` package. 
+
+The main functions of `interactionHR` are `rcsHR` and `loglinHR`. The first one will provide point estimates and confidence intervals for the  HRs of $X$ when $Z$ is modeled with restricted cubic splines (specifically using 3 knots). The second function will instead provide HRs of $X$ in the setting where $Z$ is included in the model as a continuous covariate thus assuming a log-liner effect additive interaction on the log-linear scale. For both functions, the following options must be specified: 
+
+* `model`: the `cph` model previously run
+* `data`: the same dataset used for fitting the Cox model
+* `var1`: the name of the main predictor of interest
+* `var2`: the name of the continuous predictor interacting with `var1`
+* `var2values`: the values of $Z$ for which the HR of $X$ should be calculated
+
+Additional options include:
+
+* `ci` (default TRUE) : whether a confidence interval for each HR should also be provided
+* `ci.method`: either `"delta"` or `"bootstrap"`
+* `ci.boot.method` (default= "percentile" - only if `method="bootstrap"`) : see `boot.ci` reference 
+* `R` (default=100 - only if `method="bootstrap"`) : number of bootstrap iterations
+* `parallel` (default "multicore" - only if `method="bootstrap"`): see `boot.ci` reference 
+
+A third function `plot.HR` is also implemented to provide a graphical display of the results and only require the `rcsHR` or `loglinHR` results as object. 
+
+## Example 1
+
+The first example is based on a study on drug relapse among 575 patients enrolled in a clinical trial of residential treatment for drug abuse. The main exposure of interest is the binary indicator of assigned treatment (0/1) and a treatment*age interaction is specified.
+
+The following code provides an estimate of the treatment HR at different ages, when age is modeled with restricted cubic splines. The model is further adjusted for tumor site, race, and previous use of IV drug. It is recommended to check the distribution of $Z$ (here, age) to define a realistic range of `var2values`. Finally, the code is replicated by using the delta method or bootstrap for obtaining confidence intervals. Note that when `ci.method = "bootstrap"` is specified, additional options can be specified.
+
+```{r , warning=FALSE, message=FALSE}
+
+myformula <- Surv(time, censor) ~ treat*rcs(age, 3) + site + nonwhite + ivdrug
+model_rcs <- cph(myformula , data = umaru , x = TRUE , y=TRUE)
+
+HR_rcs_delta <- rcsHR( var2values = c(20:50)
+                     , model = model_rcs , data = umaru , var1 ="treat", var2="age" ,ci.method = "delta")
+
+plot.HR(HR_rcs_delta , xlab = "Age")
+
+HR_rcs_boot <- rcsHR( var2values = c(20:50)
+                      , model = model_rcs , data = umaru , var1 ="treat", var2="age" , ci.method = "bootstrap"
+                      , ci.boot.method = "norm" , R = 500 , parallel = "multicore")
+
+plot.HR(HR_rcs_boot , xlab = "Age")
+```
+
+The following code replicates the same analysis in the setting where the interaction model was specified without modeling the continuous covariate $Z$ with restricted cubic splines (log-linear interaction model). The `loglinHR` function used in this context requires the same options of `rcsHR`
+
+```{r , warning=FALSE, message=FALSE}
+
+myformula <- Surv(time, censor) ~ treat*age + site + nonwhite + ivdrug
+model_loglin <- cph(myformula , data = umaru , x = TRUE , y=TRUE)
+
+HR_loglin_delta <- loglinHR( var2values = c(20:50)
+                     , model = model_loglin , data = umaru , var1 ="treat", var2="age", ci.method = "delta")
+
+plot.HR(HR_loglin_delta , xlab = "Age")
+
+HR_loglin_boot <- loglinHR( var2values = c(20:50)
+                      , model = model_loglin , data = umaru , var1 ="treat", var2="age", ci.method = "bootstrap"
+                      , ci.boot.method = "norm" , R = 500 , parallel = "multicore")
+
+plot.HR(HR_loglin_boot , xlab = "Age")
+```
+
+
+In this example the log-linear and spline interaction models provide similar results, with the treatment HR decreasing over levels of age (note that, in regular practice, a thorough model comparison to decide whether the log-linear or spline interaction model better fits the data should be conducted before using `interactionHR`). 
+
+## Example 2
+
+This second example is based on a larger dataset of 17549 individuals  from a population study of non-alcoholic fatty liver disease (NAFLD). Here the main exposure $X$ of interest is age, and an interaction with BMI is specified. The code will be the same in the presence of a continuous covariate, but the interpretation will be slightly different as the functions will estimate the HR for a unit increase in $X$ (age) over levels of BMI. The following code will provide estimates of the HR for a unit increase of age over levels of BMI, modeled with restricted cubic spline.
+
+```{r , warning=FALSE, message=FALSE}
+
+myformula <- Surv(futime, status) ~ age*rcs(bmi, 3) + male
+model2_rcs <- cph(myformula , data = nafld1 , x = TRUE , y=TRUE)
+
+
+HR2_rcs_delta <- rcsHR( var2values = c(15:50)
+                     , model = model2_rcs , data = nafld1 , var1 ="age", var2="bmi" , ci=TRUE , conf = 0.95 , ci.method = "delta")
+
+plot.HR(HR2_rcs_delta , xlab = "BMI")
+
+```
+
+If the user is interested in a different HR (e.g. the HR for a 10-unit increase, or the HR for a 1-sd unit increase), the predictor should be standardized accordingly before fitting the model. For example, here we estimate the HR for a 5-years increase in age
+
+```{r , warning=FALSE, message=FALSE}
+
+nafld1$age5<-nafld1$age/5
+
+myformula <- Surv(futime, status) ~ age5*rcs(bmi, 3) + male
+model3_rcs <- cph(myformula , data = nafld1 , x = TRUE , y=TRUE)
+
+
+HR3_rcs_delta <- rcsHR( var2values = c(15:50)
+                     , model = model3_rcs , data = nafld1 , var1 ="age5", var2="bmi" , ci=TRUE , conf = 0.95 , ci.method = "delta")
+
+plot.HR(HR3_rcs_delta , xlab = "BMI")
+
+```
+
+
+The effect of age changes over levels of BMI in a quadratic form, with a lower effect for both those with increasingly higher and lower BMI. Including BMI without any spline transformation (i.e. the log-linear interaction model) would fail to capture this functional form, as shown from the following code. A comparison of the models through the use of AIC would also confirm that the spline interaction model better fits the data 
+
+
+```{r , warning=FALSE, message=FALSE}
+
+myformula <- Surv(futime, status) ~ age*bmi + male
+model2_loglin <- cph(myformula , data = nafld1 , x = TRUE , y=TRUE)
+
+HR2_loglin_delta <- loglinHR( var2values = c(15:50)
+                     , model = model2_loglin , data = nafld1 , var1 ="age", var2="bmi" , ci=TRUE , conf = 0.95 , ci.method = "delta")
+
+plot.HR(HR2_loglin_delta , xlab = "BMI")
+
+AIC(model2_loglin)
+AIC(model2_rcs)
+```
+
+
+
+## Appendix
+
+`interactionHR` requires results from a Cox model where an interaction between a main predictor (binary or continuous) $X$ and a continuous predictor $Z$ has been specified. This interaction can be included as a simple product term between the 2 predictors, or by flexibly modeling $Z$ with restricted cubic splines. For both interaction settings, the main exposure of interest $X$ has to either be binary or continuous.  
+
+### Log-linear interaction model
+
+A basic Cox model with 2 predictors and their interaction takes the form:
+
+$h(t|x,z)=h_0\cdot\exp(\beta_1x+\beta_2z+\beta_3x\cdot z)$  
+
+After estimation of the model, we want to predict the HR for $X$ over levels of $Z$. This is given by
+
+
+$HR_{10}=\frac{h(t|x=1,z)}{h(t|x=0,z)}=\frac{h_0\cdot\exp(\beta_1x+\beta_2z+\beta_3x\cdot z)}{h_0\cdot\exp(\beta_1x+\beta_2z+\beta_3x\cdot z)}=\frac{\exp(\beta_1+\beta_2z+\beta_3z)}{\exp(\beta_2z)}$  ,
+
+which will be plotted against $Z$
+
+To estimate 95 $ \%$ confidence intervals $SE(HR_{10})$ is required. This is obtained by focusing on $\log(HR_{10})$ and calculating lower and upper bounds for this quantity, which are then exponentiated.
+
+$SE(\log(HR_{10}))=SE(\log(\frac{\exp(\beta_1+\beta_2z+\beta_3z)}{\exp(\beta_2z)}))=SE(\log(\exp(\beta_1+\beta_2z+\beta_3z)-\log(\exp(\beta_2z)))=SE(\beta_1+\beta_3z)$
+
+This is calculated by using the delta method. Upper and lower bounds are then derived with $\exp(\log(HR_{10})\pm1.96\cdot SE(log(HR_{10})))$
+
+### Restricted cubic splines interaction model
+
+`interactionHR` allows the continuous covariate $Z$ to be flexibly modeled with restricted cubic splines, with 3 knots ($k_1, k_2, k_3$). The interaction model, in this setting, takes the form:
+
+$h(t|x,z,c)=h_0\cdot\exp(\beta_1x+sp(z)+sp_2(z\cdot x))$  
+
+where
+
+$sp(z)=\alpha_1z+\alpha_2\cdot[\frac{(z-k_1)^3_+-(z-k_2)^3_+\cdot\frac{ k_2-k_1}{ k_3-k_2} +(z-k_3)^3\cdot\frac{k_3-k_1}{k_3-k_2}}{(k_3-k_1)^2}]$
+
+and 
+
+$sp_2(z\cdot x)=\gamma_1xz+\gamma_2x\cdot[\frac{(z-k_1)^3_+-(z-k_2)^3_+\cdot\frac{ k_3-k_1}{ k_3-k_2} +(z-k_3)^3\cdot\frac{k_2-k_1}{k_3-k_2}}{(k_3-k_1)^2}]$
+
+
+After estimation of the model, we want to predict the HR for $X$ over levels of $Z$. This is given by
+
+
+$HR_{10}=\frac{h(t|X=x_1,Z)}{h(t|X=x_2,Z)}=\frac{h_0\cdot\exp(\beta_1x_1+sp(z)+sp_2(z)\cdot x_1)}{h_0\cdot\exp(\beta_1x_2+sp(z)+sp_2(z)\cdot x_2)}=\frac{h(t|X=x_1,Z)}{h(t|X=x_2,Z)}=\frac{\exp(\beta_1+sp(z)+sp_2(z))}{\exp(sp(z))}$  ,
+
+which will be plotted against $Z$
+
+Similarly to the previous situation, the $SE$ can be derived by using the delta method to calculate $SE(\beta_1+sp_2(z))$
+
+
+
