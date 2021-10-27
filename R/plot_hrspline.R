@@ -23,18 +23,18 @@ plot <- function (x, ...) {
 #'                      , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta")
 #' plot(myHR , ylab = "HR of male VS female" , xlab = "Age")
 #' @export
-plot.HR <- function(df , xlab = "" , main = "" , log = FALSE
+plot.HR <- function(x , xlab = "" , main = "" , log = FALSE
                     , ylab = if(log) "log(HR)" else "HR" ,line1 = TRUE){
-  plot( df$Value , df$HR
+  plot( x$Value , x$HR
         , type="n" , xlab = xlab
         , ylab = if(log) "HR (log scale)" else "HR"
         , log = if(log) "y" else ""
-        , ylim = c(min(df$CI_L , na.rm = TRUE),max(df$CI_U , na.rm = TRUE))
+        , ylim = c(min(x$CI_L , na.rm = TRUE),max(x$CI_U , na.rm = TRUE))
         , main = main)
   if(line1) { if(log) abline(h=0 , lty = 3 , lwd = 2 , col = "gray") else abline(h=1 , lty = 3 , lwd = 2 , col = "gray")}
-  lines( pspline::sm.spline(df$Value , df$HR) , col = "dodgerblue" , lty = 1 , lwd = 3 )
-  if("CI_L" %in% colnames(df) && "CI_U" %in% colnames(df)){
-    lines( pspline::sm.spline(df$Value , df$CI_L) , col = "black" , lty = 2 , lwd = 2 )
-    lines( pspline::sm.spline(df$Value , df$CI_U) , col = "black" , lty = 2 , lwd = 2 )
+  lines( pspline::sm.spline(x$Value , x$HR) , col = "dodgerblue" , lty = 1 , lwd = 3 )
+  if("CI_L" %in% colnames(x) && "CI_U" %in% colnames(x)){
+    lines( pspline::sm.spline(x$Value , x$CI_L) , col = "black" , lty = 2 , lwd = 2 )
+    lines( pspline::sm.spline(x$Value , x$CI_U) , col = "black" , lty = 2 , lwd = 2 )
   }
 }
