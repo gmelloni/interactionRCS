@@ -23,5 +23,5 @@ For an introduction to `interactionHR` please refer to this vignette
 
 ### Authors
 Giorgio Melloni, Sabina Murphy, Andrea Bellavia
-TIMI study group, Brigham and Womens Hospital
-Harvard Medical School
+
+TIMI study group, Brigham and Womens Hospital / Harvard Medical School
