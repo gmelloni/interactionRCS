@@ -47,12 +47,12 @@
 #' data(cancer)
 #' myformula <- Surv(time, status) ~ ph.karno + ph.ecog + age*sex
 #' model <- coxph(myformula , data = lung )
-#' intHR( var2values = 40:80
+#' loglinHR( var2values = 40:80
 #'                      , model = model , data = lung2 , var1 ="sex", var2="age" , units=1
 #'                      , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta")
 #' @return if ci = FALSE, a vector of estimate of length(var2values), if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
 #' @export
-intHR <- function(var2values , model , data , var1 , var2
+loglinHR <- function(var2values , model , data , var1 , var2
                         , ci=TRUE , conf = 0.95 , ci.method = "delta"
                         , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
   # Check correct class for model

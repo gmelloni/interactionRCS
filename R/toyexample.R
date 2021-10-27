@@ -31,17 +31,17 @@ myformula <- Surv(time, status) ~ sex*age + ph.karno + ph.ecog
 modInt <- coxph(myformula , data = lung2 , x = TRUE)
 modInt <- cph(myformula , data = lung2 , x = TRUE)
 # # Exact
-# intHR( var2values =  c(30,50,60,70,80)
+# loglinHR( var2values =  c(30,50,60,70,80)
 #           , model = modInt , data = lung2 , var1 ="sex", var2="age" , units=1
 #           , center = 0, ci=TRUE , conf = 0.95 , ci.method = "normal"
 #           , ci.boot.method = "norm" , R = 100 , parallel = "multicore")
 # Delta
-intHR( var2values =  c(30,50,60,70,80)
+loglinHR( var2values =  c(30,50,60,70,80)
              , model = modInt , data = lung2 , var1 ="sex", var2="age" , units=1
              , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta"
              , ci.boot.method = "norm" , R = 100 , parallel = "multicore")
 # Boot
-intHR( var2values =  c(30,50,60,70,80)
+loglinHR( var2values =  c(30,50,60,70,80)
           , model = modInt , data = lung2 , var1 ="sex", var2="age" , units=1
           , center = 0, ci=TRUE , conf = 0.95 , ci.method = "bootstrap"
           , ci.boot.method = "perc" , R = 100 , parallel = "multicore")
