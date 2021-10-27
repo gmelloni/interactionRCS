@@ -1,4 +1,4 @@
-.bootHRSpline <- function(data, idx , x , model , var1 , var2){
+.bootintHR <- function(data, idx , x , model , var1 , var2){
   df <- data[idx, ]
   mycall <- model$call
   mycall <- pryr::modify_call(mycall , list(data=quote(df)))
@@ -25,29 +25,44 @@
 }
 
 
-#' Generate HR values for a 1 unit increase in a variable at specified points of another variable
+#' Linear interaction HR
 #'
-#' This function does bla bla bla
+#' Generate HR values for a 1 unit increase in a variable at
+#' specified points of another interacting variable in a simple interaction model
 #'
-#' @param x numeric vector of var2 points to estimate
-#' @param model model of class coxph. If data is NULL, the package expects to find the data in the model run with x = TRUE
-#' @param data data used in the model. If absent, we will attempt to recover the data from the model object if x = TRUE
-#' @param var1 variable that increases by 1 unit. If continuous, 1-SD increase is used
-#' @param var2 variable to spline. x values belong to var2
+#' @param var2values numeric vector of var2 points to estimate
+#' @param model model of class coxph or cph. If data is NULL, the function expects to find the data model$x
+#' @param data data used in the model. If absent, we will attempt to recover the data from the model object. Only used for bootstrap CI
+#' @param var1 variable that increases by 1 unit from 0
+#' @param var2 variable to spline. var2values belong to var2
 #' @param ci calculate 95% CI?
+#' @param conf confidence level. Default 0.95
 #' @param ci.method confidence interval method. "delta" performs delta method. "bootstrap" performs bootstrapped CI (slower)
+#' @param ci.boot.method one of the available bootstrap CI methods from \code{\link[boot]{boot.ci}}. Default percentile
 #' @param R number of bootstrap samples if ci.method = "bootstrap". Default 100
-#' @param parallel can take values "no", "multicore", "snow" if ci.method = "bootstrap"
+#' @param parallel can take values "no", "multicore", "snow" if ci.method = "bootstrap". Default multicore
 #' @param ... other parameters for boot
-#' @return if ci = FALSE, a vector of estimate of length(x), if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
+#' @examples
+#' library(survival)
+#' data(cancer)
+#' myformula <- Surv(time, status) ~ ph.karno + ph.ecog + age*sex
+#' model <- coxph(myformula , data = lung )
+#' intHR( var2values = 40:80
+#'                      , model = model , data = lung2 , var1 ="sex", var2="age" , units=1
+#'                      , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta")
+#' @return if ci = FALSE, a vector of estimate of length(var2values), if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
 #' @export
-HRSpline <- function(x , model , data , var1 , var2
+intHR <- function(var2values , model , data , var1 , var2
                         , ci=TRUE , conf = 0.95 , ci.method = "delta"
                         , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
   # Check correct class for model
   if( !any( c("coxph","cph") %in% class(model) ) ){
     stop("Interaction Cox model must be run with survival::coxph or rms::cph")
   }
+  if(!is.numeric(var2values)){
+    stop("var2values must be a numeric vector")
+  }
+  x <- var2values
   if(missing(data)){
     if(is.null(model$x) && ci && ci.method == "bootstrap"){
       # We need the data only for bootstrap CI
@@ -79,7 +94,7 @@ HRSpline <- function(x , model , data , var1 , var2
   HR <- unname(exp( var1Term + x*intTerm))
   if(ci){
     alpha <- qnorm( 1 - (1-conf)/2)
-    if(ci.method=="exact"){
+    if(ci.method=="normal"){
       stop("not implemented yet")
         SEgeneral <- sqrt( sum( c( diag(model$var)[c(mycoefWhich[var1] ,mycoefWhich[ mycoefWhich[ myvars[3]] ])]
                                    , 2*model$var[mycoefWhich[var1] ,mycoefWhich[ myvars[3]]]) ) )
@@ -99,6 +114,8 @@ HRSpline <- function(x , model , data , var1 , var2
                            , CI_U = HR_U
                            , SE = SEgeneral)
         colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U" , "SE")
+        HRci <- as.data.frame(HRci)
+        class(HRci) <- c("HR" , class(HRci))
         return(HRci)
     } else if(ci.method == "delta"){
       # This creates a vector like x1 , x2 , x3 , x7 , x8
@@ -120,7 +137,9 @@ HRSpline <- function(x , model , data , var1 , var2
       HRci <- cbind( Value = x , HRci)
       rownames(HRci) <- x
       colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U" , "SE")
-      return(as.data.frame(HRci))
+      HRci <- as.data.frame(HRci)
+      class(HRci) <- c("HR" , class(HRci))
+      return(HRci)
     } else if(ci.method == "bootstrap"){
       if(missing(parallel)){
         parallel <- "multicore"
@@ -128,7 +147,7 @@ HRSpline <- function(x , model , data , var1 , var2
       if(missing(R)){
         R <- 100
       }
-      myBoot <- boot::boot(data = data, statistic = .bootHRSpline
+      myBoot <- boot::boot(data = data, statistic = .bootintHR
                            , x = x , model = model
                            , R = R , parallel = parallel
                            , var1 = var1 , var2 = var2 )
@@ -144,11 +163,15 @@ HRSpline <- function(x , model , data , var1 , var2
       HRci <- cbind(x , HRci)
       colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U" , "SE")
       rownames(HRci) <- x
-      return(as.data.frame(HRci))
+      HRci <- as.data.frame(HRci)
+      class(HRci) <- c("HR" , class(HRci))
+      return(HRci)
     } else {
       stop("Only delta and bootstrap are valid CI methods")
     }
   } else {
-    return(as.data.frame(HR))
+    HR <- data.frame(Value = x , HR = HR)
+    class(HR) <- c("HR",class(HR))
+    return(HR)
   }
 }

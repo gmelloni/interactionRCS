@@ -1,4 +1,4 @@
-.bootHRcubSpline <- function(data, idx , x , model , var1 , var2){
+.bootrcsHR <- function(data, idx , x , model , var1 , var2){
   df <- data[idx, ]
   # mymodel <- cph(model$sformula, data=df)
   mycall <- model$call
@@ -37,47 +37,61 @@
     HR <- unname(exp( b + sp2))
 }
 
-#' Generate HR values for a 1 unit increase in a variable at specified points of another variable
+#' Restricted cubic spline interaction HR
 #'
-#' This function does bla bla bla
+#' Generate HR values for a 1 unit increase in a variable at
+#' specified points of another interacting variable splined with rcs(df = 3)
 #'
-#' @param x numeric vector of var2 points to estimate
-#' @param model model of class coxph. If data is NULL, the package expects to find the data in the model run with x = TRUE
-#' @param data data used in the model. If absent, we will attempt to recover the data from the model object if x = TRUE
-#' @param var1 variable that increases by 1 unit. If continuous, 1-SD increase is used
-#' @param var2 variable to spline. x values belong to var2
+#' @param var2values numeric vector of var2 points to estimate
+#' @param model model of class cph. If data is NULL, the function expects to find the data in model$x.
+#' @param data data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap
+#' @param var1 variable that increases by 1 unit from 0
+#' @param var2 variable to spline. var2values belong to var2
 #' @param ci calculate 95% CI?
-#' @param ci.method confidence interval method. "delta" performs delta method (fast but inaccurate). "boot" performs bootstrapped CI (slower)
+#' @param conf confidence level. Default 0.95
+#' @param ci.method confidence interval method. "delta" performs delta method. "bootstrap" performs bootstrapped CI (slower)
+#' @param ci.boot.method one of the available bootstrap CI methods from \code{\link[boot]{boot.ci}}. Default percentile
 #' @param R number of bootstrap samples if ci.method = "bootstrap". Default 100
-#' @param parallel can take values "no" , "multicore" , "snow" if ci.method = "bootstrap"
+#' @param parallel can take values "no", "multicore", "snow" if ci.method = "bootstrap". Default multicore
 #' @param ... other parameters for boot
-#' @return if ci = FALSE, a vector of estimate of length(x), if ci = TRUE a matrix with 4 columns, initial values, HR, lower CI and upper CI
+#' @examples
+#' library(survival)
+#' library(rms)
+#' data(cancer)
+#' myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age,3)*sex
+#' model <- cph(myformula , data = lung )
+#' rcsHR( var2values = 40:80
+#'                      , model = model , data = lung2 , var1 ="sex", var2="age" , units=1
+#'                      , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta")
+#' @return if ci = FALSE, a vector of estimate of length(var2values), if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
 #' @export
-HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
+rcsHR <- function(var2values , model , data=NULL , var1 , var2 , units=1 , center = 0
   , ci=TRUE , conf = 0.95 , ci.method = "delta"
   , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
   # Check correct class for model
   if( !all( c("cph","rms","coxph") %in% class(model) ) ){
     stop("Cubic spline Cox model must be run with rms::cph")
   }
-
-
+  if(!is.numeric(var2values)){
+    stop("var2values must be a numeric vector")
+  }
+  x <- var2values
   if(missing(data)){
     if(is.null(model$x)){
       stop("Missing data")
     } else {
       data <- model$x
-      if(!all(c(var1,var2) %in% colnames(data) )){
-        stop("var1 or var2 not present in th data")
-      }
     }
+  }
+  if(!all(c(var1,var2) %in% colnames(data) )){
+    stop("var1 or var2 not present in th data")
   }
   # Check that var1 is a 0/1, if not check if the mean is 0
-  if(!all(data[[var1]] %in% c(0,1,NA))){
-    if(!isTRUE(all.equal(mean(data[[var1]] , na.rm =TRUE),0))){
-      warning("var1 is not centered on 0 nor a 0/1 variable, results are always reported for a 0 to 1 change in var1.")
-    }
-  }
+  # if(!all(data[[var1]] %in% c(0,1,NA))){
+  #   if(!isTRUE(all.equal(mean(data[[var1]] , na.rm =TRUE),0))){
+  #     warning("var1 is not centered on 0 nor a 0/1 variable, results are always reported for a 0 to 1 change in var1.")
+  #   }
+  # }
 
   coefMod <- coef(model)
   # k <- attributes(rms::rcs(data[[var2]], 3))$parms
@@ -144,7 +158,9 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
       HRci <- cbind( Value = x , HRci)
       rownames(HRci) <- x
       colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U" , "SE")
-      return(as.data.frame(HRci))
+      HRci <- as.data.frame(HRci)
+      class(HRci) <- c("HR" , class(HRci))
+      return(HRci)
     } else if(ci.method == "bootstrap"){
       if(missing(parallel)){
         parallel <- "multicore"
@@ -152,7 +168,7 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
       if(missing(R)){
         R <- 100
       }
-      myBoot <- boot::boot(data = data, statistic = .bootHRcubSpline, x = x , model = model
+      myBoot <- boot::boot(data = data, statistic = .bootrcsHR, x = x , model = model
                   , R = R , parallel = parallel, var1 = var1 , var2 = var2 )
       SE <- apply(myBoot$t , 2 , sd)
       HRci <- t(vapply( seq_len(length(x)) , function(idx) {
@@ -166,11 +182,15 @@ HRcubSpline <- function(x , model , data , var1 , var2 , units=1 , center = 0
       HRci <- cbind(x , HRci)
       colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U" , "SE")
       rownames(HRci) <- x
-      return(as.data.frame(HRci))
+      HRci <- as.data.frame(HRci)
+      class(HRci) <- c("HR" , class(HRci))
+      return(HRci)
     } else {
       stop("Only delta and bootstrap are valid CI methods")
     }
   } else {
-    return(as.data.frame(HR))
+    HR <- data.frame(Value = x , HR = HR)
+    class(HR) <- c("HR",class(HR))
+    return(HR)
   }
 }
