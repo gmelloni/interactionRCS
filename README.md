@@ -19,6 +19,7 @@ library(interactionHR)
 ```
 from within a web-aware R.
 
+### Vignette
 For an introduction to `interactionHR` please refer to this [vignette](https://raw.githack.com/gmelloni/interactionHR/main/inst/data/vignette.html)
 
 ### Authors
