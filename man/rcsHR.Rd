@@ -10,8 +10,6 @@ rcsHR(
   data = NULL,
   var1,
   var2,
-  units = 1,
-  center = 0,
   ci = TRUE,
   conf = 0.95,
   ci.method = "delta",
@@ -32,7 +30,7 @@ rcsHR(
 
 \item{var2}{variable to spline. var2values belong to var2}
 
-\item{ci}{calculate 95% CI?}
+\item{ci}{calculate 95\% CI?}
 
 \item{conf}{confidence level. Default 0.95}
 
@@ -47,7 +45,8 @@ rcsHR(
 \item{...}{other parameters for boot}
 }
 \value{
-if ci = FALSE, a vector of estimate of length(var2values), if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
+if ci = FALSE, a dataframe with initial values and HR
+, if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
 }
 \description{
 Generate HR values for a 1 unit increase in a variable at
@@ -60,6 +59,6 @@ data(cancer)
 myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age,3)*sex
 model <- cph(myformula , data = lung )
 rcsHR( var2values = 40:80
-                     , model = model , data = lung2 , var1 ="sex", var2="age" , units=1
-                     , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta")
+                     , model = model , data = lung , var1 ="sex", var2="age"
+                     , ci=TRUE , conf = 0.95 , ci.method = "delta")
 }

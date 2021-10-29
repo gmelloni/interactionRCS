@@ -48,9 +48,16 @@
 #' myformula <- Surv(time, status) ~ ph.karno + ph.ecog + age*sex
 #' model <- coxph(myformula , data = lung )
 #' loglinHR( var2values = 40:80
-#'                      , model = model , data = lung2 , var1 ="sex", var2="age" , units=1
-#'                      , center = 0, ci=TRUE , conf = 0.95 , ci.method = "delta")
-#' @return if ci = FALSE, a vector of estimate of length(var2values), if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
+#'                      , model = model , data = lung , var1 ="sex", var2="age"
+#'                      , ci=TRUE , conf = 0.95 , ci.method = "delta")
+#' @return if ci = FALSE, a vector of estimate of length(var2values),
+#' if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
+#' @importFrom rms cph
+#' @importFrom survival coxph
+#' @importFrom pryr modify_call
+#' @importFrom msm deltamethod
+#' @importFrom boot boot boot.ci
+#' @importFrom stats vcov coef as.formula qnorm sd
 #' @export
 loglinHR <- function(var2values , model , data , var1 , var2
                         , ci=TRUE , conf = 0.95 , ci.method = "delta"
