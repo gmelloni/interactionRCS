@@ -4,12 +4,12 @@
 ---
 
 ### Description
-`interactionHR` estimates of the hazard Ratio for one covariate of interest (binary or continuous) over levels of a second continuous 
+`interactionHR` estimates the Hazard Ratio for one covariate of interest (binary or continuous) over levels of a second continuous 
   covariate with which an interaction has been specified in a Cox model with `cph`. In particular, `interactionHR` allows for
   basic interaction assessment (i.e. log-linear interaction model where a product term between the two predictors is included) 
   as well as settings where the second covariate is flexibly modeled with restricted cubic splines. Confidence intervals for 
   the predicted Hazard Ratios can be calculated with either bootstrap or the delta method. Lastly, `interactionHR`
-  produces a plot of the hazard ratio over the other covariate.
+  produces a plot of the hazard ratio over levels of the other covariate.
 
 ### Installation
 To install the last version of `interactionHR` from GitHub, type
@@ -19,7 +19,8 @@ library(interactionHR)
 ```
 from within a web-aware R.
 
-For an introduction to `interactionHR` please refer to this vignette
+### Vignette
+For an introduction to `interactionHR` please refer to this [vignette](https://raw.githack.com/gmelloni/interactionHR/main/inst/data/vignette.html)
 
 ### Authors
 Giorgio Melloni, Sabina Murphy, Andrea Bellavia
