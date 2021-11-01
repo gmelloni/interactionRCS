@@ -12,6 +12,7 @@ vignette: >
 
 ```{r setup, include=FALSE}
 # setwd("Z:/AndreaB/interactionHR")
+# devtools::install_local(".")
 knitr::opts_chunk$set(echo = TRUE)
 
 library(survival)
@@ -165,7 +166,7 @@ $HR_{10}=\frac{h(t|x=1,z)}{h(t|x=0,z)}=\frac{h_0\cdot\exp(\beta_1x+\beta_2z+\bet
 
 which will be plotted against $Z$
 
-To estimate 95 $ \%$ confidence intervals $SE(HR_{10})$ is required. This is obtained by focusing on $\log(HR_{10})$ and calculating lower and upper bounds for this quantity, which are then exponentiated.
+To estimate $95\%$ confidence intervals $SE(HR_{10})$ is required. This is obtained by focusing on $\log(HR_{10})$ and calculating lower and upper bounds for this quantity, which are then exponentiated.
 
 $SE(\log(HR_{10}))=SE(\log(\frac{\exp(\beta_1+\beta_2z+\beta_3z)}{\exp(\beta_2z)}))=SE(\log(\exp(\beta_1+\beta_2z+\beta_3z)-\log(\exp(\beta_2z)))=SE(\beta_1+\beta_3z)$
 
