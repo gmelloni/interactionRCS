@@ -1,3 +1,7 @@
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/gmelloni/interactionHR/workflows/R-CMD-check/badge.svg)](https://github.com/gmelloni/interactionHR/actions)
+<!-- badges: end -->
+
 # interactionHR
 #### A tool to calculate and plot Hazard Ratios after a Cox model in which an interaction between the main predictor and a continuous covariate has been specified.
 #### Version 0.1 (October 27, 2021)
