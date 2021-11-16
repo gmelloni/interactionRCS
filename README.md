@@ -19,6 +19,9 @@
 To install the latest version of `interactionHR`, type the following lines in a web-aware R environment.
 
 ```
+if(!"devtools" %in% rownames(installed.packages())){
+  install.packages("devtools")
+}
 devtools::install_github("https://github.com/gmelloni/interactionHR.git")
 library(interactionHR)
 ```
@@ -28,6 +31,6 @@ library(interactionHR)
 For a detailed introduction to `interactionHR` and code examples please refer to this [vignette](https://raw.githack.com/gmelloni/interactionHR/main/inst/extdata/vignette.html)
 
 ### Authors
-Giorgio Melloni, Sabina Murphy, Andrea Bellavia
+Giorgio Melloni, Andrea Bellavia
 
-TIMI study group, Brigham and Womens Hospital / Harvard Medical School
+TIMI study group, Department of Cardiovascular Medicine, Brigham and Womens Hospital / Harvard Medical School
