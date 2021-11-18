@@ -1,9 +1,14 @@
 ---
 title: "Introduction to the *interactionHR* package"
-subtitle: "Giorgio Melloni, Sabina Murphy, Andrea Bellavia"
+subtitle: "Giorgio Melloni, Andrea Bellavia"
 author: "[TIMI study group](https://timi.org/)"
 date: 'Last update: `r format(Sys.Date(),format="%B %d, %Y")`'
-output: html_document
+output: 
+  html_document:
+    theme: spacelab
+    toc: true
+    toc_depth: 2
+    toc_float: true
 vignette: >
   %\VignetteIndexEntry{Introduction to interactionHR package}
   %\VignetteEngine{knitr::rmarkdown}
@@ -22,13 +27,13 @@ library(interactionHR)
 data(umaru, package = "interactionHR")
 ```
 
-## Introduction
+# Introduction
 
 The `interactionHR` package is designed to facilitate interpretation and presentation of results from a COX regression model where an interaction between the main predictor of interest $X$ (binary or continuous) and another continuous covariate $Z$ has been specified. Specifically, the package will provide point estimates of the HR for the main predictor $X$ over levels of $Z$, allowing for settings where $Z$ is flexibly modeled with restricted cubic splines, and provide a graphical display of this interaction. Two methods for deriving and plotting confidence intervals are also implemented, including the delta method and bootstrap.
 
 Theoretical background is provided in the Appendix at the end of this vignette.
 
-## How to use the interactionHR package 
+# How to use the interactionHR package 
 
 Functions within the `interactionHR` package require that a Cox model has already been estimated and model results be provided as an object. Because of its flexibility in dealing with restricted cubic splines, `interactionHR` requires the Cox model to be fitted with the `cph` function of  `rms` package. 
 
@@ -50,7 +55,7 @@ Additional options include:
 
 A third function `plotHR` is also implemented to provide a graphical display of the results and only require the `rcsHR` or `loglinHR` results as object. 
 
-## Example 1
+# Example 1
 
 The first example is based on a study on drug relapse among 575 patients enrolled in a clinical trial of residential treatment for drug abuse. The main exposure of interest is the binary indicator of assigned treatment (0/1) and a treatment*age interaction is specified.
 
@@ -95,7 +100,7 @@ plotHR(HR_loglin_boot , xlab = "Age")
 
 In this example the log-linear and spline interaction models provide similar results, with the treatment HR decreasing over levels of age (note that, in regular practice, a thorough model comparison to decide whether the log-linear or spline interaction model better fits the data should be conducted before using `interactionHR`). 
 
-## Example 2
+# Example 2
 
 This second example is based on a larger dataset of 17549 individuals  from a population study of non-alcoholic fatty liver disease (NAFLD). Here the main exposure $X$ of interest is age, and an interaction with BMI is specified. The code will be the same in the presence of a continuous covariate, but the interpretation will be slightly different as the functions will estimate the HR for a unit increase in $X$ (age) over levels of BMI. The following code will provide estimates of the HR for a unit increase of age over levels of BMI, modeled with restricted cubic spline.
 
@@ -149,11 +154,11 @@ AIC(model2_rcs)
 
 
 
-## Appendix
+# Appendix
 
 `interactionHR` requires results from a Cox model where an interaction between a main predictor (binary or continuous) $X$ and a continuous predictor $Z$ has been specified. This interaction can be included as a simple product term between the 2 predictors, or by flexibly modeling $Z$ with restricted cubic splines. For both interaction settings, the main exposure of interest $X$ has to either be binary or continuous.  
 
-### Log-linear interaction model
+## Log-linear interaction model
 
 A basic Cox model with 2 predictors and their interaction takes the form:
 
@@ -172,7 +177,7 @@ $SE(\log(HR_{10}))=SE(\log(\frac{\exp(\beta_1+\beta_2z+\beta_3z)}{\exp(\beta_2z)
 
 This is calculated by using the delta method. Upper and lower bounds are then derived with $\exp(\log(HR_{10})\pm1.96\cdot SE(log(HR_{10})))$
 
-### Restricted cubic splines interaction model
+## Restricted cubic splines interaction model
 
 `interactionHR` allows the continuous covariate $Z$ to be flexibly modeled with restricted cubic splines, with 3 knots ($k_1, k_2, k_3$). The interaction model, in this setting, takes the form:
 
