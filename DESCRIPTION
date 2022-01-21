@@ -2,7 +2,7 @@ Package: interactionHR
 Type: Package
 Title: Calculate Hazard Ratios in Cox Models with Interaction
 Version: 0.1.0
-Date: 2021-10-28
+Date: 2022-01-22
 Author: Giorgio Melloni, Andrea Bellavia
 Maintainer: Giorgio Melloni <melloni.giorgio@gmail.com>
 Description: A tool to calculate and plot Hazard Ratios on a Cox model in which an interaction between the main predictor and a continuous covariate has been specified.
