@@ -1,6 +1,5 @@
 # library(survival)
 # library(rms)
-# library(pkgload)
 # data(cancer)
 # #----------------------------#
 # # rcs continuos on continuos #
