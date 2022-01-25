@@ -1,5 +1,5 @@
 ---
-title: 'interactionHR: interactionHR: A tool to calculate and plot Hazard Ratios after a Cox model in which an interaction between the main predictor and a continuous covariate has been specified.'
+title: 'interactionHR: A tool to calculate and plot Hazard Ratios after a Cox model in which an interaction between the main predictor and a continuous covariate has been specified.'
 tags:
   - R
   - biostatistics
