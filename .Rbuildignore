@@ -2,3 +2,6 @@
 ^\.Rproj\.user$
 R/toyexample.R
 ^\.github$
+figure1.png
+paper.bib
+paper.md

@@ -3,9 +3,21 @@ Type: Package
 Title: Calculate Hazard Ratios in Cox Models with Interaction
 Version: 0.1.0
 Date: 2022-01-22
-Author: Giorgio Melloni, Andrea Bellavia
-Maintainer: Giorgio Melloni <melloni.giorgio@gmail.com>
-Description: A tool to calculate and plot Hazard Ratios on a Cox model in which an interaction between the main predictor and a continuous covariate has been specified.
+Authors@R: 
+    c(person(given = "Giorgio",
+            family = "Melloni",
+            role = c("aut", "cre"),
+            email = "melloni.giorgio@gmail.com",
+            comment = c(ORCID = "0000-0001-6371-1334")),
+    person(given = "Andrea",
+            family = "Bellavia",
+            role = c("aut"),
+            email = "abellavia@bwh.harvard.edu",
+            comment = c(ORCID = "0000-0003-4988-4532")))
+Description: A tool to calculate and plot Hazard Ratios on a Cox model 
+    in which an interaction between the main predictor and a continuous covariate has been specified.
+    Methods used in the package refer to Harrell Jr FE (2015, ISBN:9783319330396); 
+    Durrleman S, Simon R. (1989) <doi:10.1002/sim.4780080504>; Greenland S. (1995) <doi:10.1097/00001648-199507000-00005>.
 License: GPL-3
 Depends:
     R (>= 3.6)
