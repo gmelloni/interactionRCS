@@ -1,5 +1,5 @@
 ---
-title: 'interactionHR: A tool to calculate and plot Hazard Ratios after a Cox model in which an interaction between the main predictor and a continuous covariate has been specified.'
+title: 'interactionRCS: A tool to calculate and plot Hazard Ratios after a Cox model in which an interaction between the main predictor and a continuous covariate has been specified.'
 tags:
   - R
   - biostatistics
@@ -24,14 +24,14 @@ bibliography: paper.bib
 
 # Summary
 
-The `interactionHR` package is designed to facilitate interpretation and presentation of results from a COX regression model where an interaction between the main predictor of interest $X$ (binary or continuous) and another continuous covariate $Z$ has been specified. Specifically, the package will provide point estimates of the HR for the main predictor $X$ over levels of $Z$, allowing for settings where $Z$ is flexibly modeled with restricted cubic splines, and provide a graphical display of this interaction. Two methods for deriving and plotting confidence intervals are also implemented, including the delta method and bootstrap.
+The `interactionRCS` package is designed to facilitate interpretation and presentation of results from a COX regression model where an interaction between the main predictor of interest $X$ (binary or continuous) and another continuous covariate $Z$ has been specified. Specifically, the package will provide point estimates of the HR for the main predictor $X$ over levels of $Z$, allowing for settings where $Z$ is flexibly modeled with restricted cubic splines, and provide a graphical display of this interaction. Two methods for deriving and plotting confidence intervals are also implemented, including the delta method and bootstrap.
 
 # Introduction
 
 
 # Mathematics
 
-`interactionHR` requires results from a Cox model where an interaction between a main predictor (binary or continuous) $X$ and a continuous predictor $Z$ has been specified. This interaction can be included as a simple product term between the 2 predictors, or by flexibly modeling $Z$ with restricted cubic splines. For both interaction settings, the main exposure of interest $X$ has to either be binary or continuous.  
+`interactionRCS` requires results from a Cox model where an interaction between a main predictor (binary or continuous) $X$ and a continuous predictor $Z$ has been specified. This interaction can be included as a simple product term between the 2 predictors, or by flexibly modeling $Z$ with restricted cubic splines. For both interaction settings, the main exposure of interest $X$ has to either be binary or continuous.  
 
 ## Log-linear interaction model
 
@@ -54,7 +54,7 @@ This is calculated by using the delta method. Upper and lower bounds are then de
 
 ## Restricted cubic splines interaction model
 
-`interactionHR` allows the continuous covariate $Z$ to be flexibly modeled with restricted cubic splines, with 3 knots ($k_1, k_2, k_3$). The interaction model, in this setting, takes the form:
+`interactionRCS` allows the continuous covariate $Z$ to be flexibly modeled with restricted cubic splines, with 3 knots ($k_1, k_2, k_3$). The interaction model, in this setting, takes the form:
 
 $h(t|x,z,c)=h_0\cdot\exp(\beta_1x+sp(z)+sp_2(z\cdot x))$  
 
@@ -77,11 +77,11 @@ which will be plotted against $Z$
 Similarly to the previous situation, the $SE$ can be derived by using the delta method to calculate $SE(\beta_1+sp_2(z))$
 
 
-# How to use the interactionHR package 
+# How to use the interactionRCS package 
 
-Functions within the `interactionHR` package require that a Cox model has already been estimated and model results be provided as an object. Because of its flexibility in dealing with restricted cubic splines, `interactionHR` requires the Cox model to be fitted with the `cph` function of  `rms` package. 
+Functions within the `interactionRCS` package require that a Cox model has already been estimated and model results be provided as an object. Because of its flexibility in dealing with restricted cubic splines, `interactionRCS` requires the Cox model to be fitted with the `cph` function of  `rms` package. 
 
-The main functions of `interactionHR` are `rcsHR` and `loglinHR`. The first one will provide point estimates and confidence intervals for the  HRs of $X$ when $Z$ is modeled with restricted cubic splines (specifically using 3 knots). The second function will instead provide HRs of $X$ in the setting where $Z$ is included in the model as a continuous covariate thus assuming a log-liner effect additive interaction on the log-linear scale. For both functions, the following options must be specified: 
+The main functions of `interactionRCS` are `rcsHR` and `loglinHR`. The first one will provide point estimates and confidence intervals for the  HRs of $X$ when $Z$ is modeled with restricted cubic splines (specifically using 3 knots). The second function will instead provide HRs of $X$ in the setting where $Z$ is included in the model as a continuous covariate thus assuming a log-liner effect additive interaction on the log-linear scale. For both functions, the following options must be specified: 
 
 * `model`: the `cph` model previously run (linlogHR accepts `coxph` objects too)
 * `var1`: the name of the main predictor of interest ($X$)

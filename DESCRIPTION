@@ -1,6 +1,6 @@
-Package: interactionHR
+Package: interactionRCS
 Type: Package
-Title: Calculate Hazard Ratios in Cox Models with Interaction
+Title: Calculate Estimates in Models with Interaction
 Version: 0.1.0
 Date: 2022-01-22
 Authors@R: 
@@ -14,7 +14,7 @@ Authors@R:
             role = c("aut"),
             email = "abellavia@bwh.harvard.edu",
             comment = c(ORCID = "0000-0003-4988-4532")))
-Description: A tool to calculate and plot Hazard Ratios on a Cox model 
+Description: A tool to calculate and plot estimates from models 
     in which an interaction between the main predictor and a continuous covariate has been specified.
     Methods used in the package refer to Harrell Jr FE (2015, ISBN:9783319330396); 
     Durrleman S, Simon R. (1989) <doi:10.1002/sim.4780080504>; Greenland S. (1995) <doi:10.1097/00001648-199507000-00005>.
