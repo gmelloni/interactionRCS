@@ -10,13 +10,18 @@ output:
     toc_depth: 2
     toc_float: true
 vignette: >
-  %\VignetteIndexEntry{Introduction to interactionHR package}
+  %\VignetteIndexEntry{Introduction to interactionRCS package}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
 
 ```{r setup, include=FALSE}
+<<<<<<< HEAD
 #devtools::install_github("https://github.com/gmelloni/interactionRCS.git")
+=======
+# setwd("Z:/AndreaB/interactionRCS")
+# devtools::install_local(".")
+>>>>>>> 76fb606edbc517e4b7297c998d0c4ea5f1b64373
 knitr::opts_chunk$set(echo = TRUE)
 
 library(survival)
