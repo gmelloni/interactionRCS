@@ -1,9 +1,8 @@
 ---
-title: 'interactionRCS: A tool to calculate and plot Hazard Ratios after a Cox model in which an interaction between the main predictor and a continuous covariate has been specified.'
+title: 'interactionRCS: An R package to display flexible interactions from common statistical modeling'
 tags:
   - R
   - biostatistics
-  - survival analysis
   - interactions
   - splines modeling
 authors:
@@ -11,6 +10,7 @@ authors:
     orcid: 0000-0000-0000-0000
     affiliation: "1, 2"
   - name: Andrea Bellavia
+    orcid: 0000-0003-4988-4532
     affiliation: "1, 2"
 affiliations:
  - name: TIMI Study Group, Brigham and Womens Hospital
@@ -21,95 +21,20 @@ date: 25 January 2022
 bibliography: paper.bib
 ---
 
-
 # Summary
 
-The `interactionRCS` package is designed to facilitate interpretation and presentation of results from a COX regression model where an interaction between the main predictor of interest $X$ (binary or continuous) and another continuous covariate $Z$ has been specified. Specifically, the package will provide point estimates of the HR for the main predictor $X$ over levels of $Z$, allowing for settings where $Z$ is flexibly modeled with restricted cubic splines, and provide a graphical display of this interaction. Two methods for deriving and plotting confidence intervals are also implemented, including the delta method and bootstrap.
+Statistical and biostatistical research are often interested in situations where the main effect of a predictor of interest varies over levels of another predictor. In clinical studies this common situation arises, for example, when the effect of a new treatment in a randomized clinical trial (RCT) changes over levels of participants characteristics such as sex or age. In this context, the joint effect of the two predictors of interest (treatment and age, for example) on a given response is captured by their independent effects and by an interaction effect that quantifies the additional change in the response when both predictors are operating. A thorough description of interaction effects and their interpretation and relevance can be found in @vanderweele2014tutorial. 
 
-# Introduction
-
-
-# Mathematics
-
-`interactionRCS` requires results from a Cox model where an interaction between a main predictor (binary or continuous) $X$ and a continuous predictor $Z$ has been specified. This interaction can be included as a simple product term between the 2 predictors, or by flexibly modeling $Z$ with restricted cubic splines. For both interaction settings, the main exposure of interest $X$ has to either be binary or continuous.  
-
-## Log-linear interaction model
-
-A basic Cox model with 2 predictors and their interaction takes the form:
-
-$h(t|x,z)=h_0\cdot\exp(\beta_1x+\beta_2z+\beta_3x\cdot z)$  
-
-After estimation of the model, we want to predict the HR for $X$ over levels of $Z$. This is given by
-
-
-$HR_{10}=\frac{h(t|x=1,z)}{h(t|x=0,z)}=\frac{h_0\cdot\exp(\beta_1x+\beta_2z+\beta_3x\cdot z)}{h_0\cdot\exp(\beta_1x+\beta_2z+\beta_3x\cdot z)}=\frac{\exp(\beta_1+\beta_2z+\beta_3z)}{\exp(\beta_2z)}$  ,
-
-which will be plotted against $Z$
-
-To estimate $95\%$ confidence intervals $SE(HR_{10})$ is required. This is obtained by focusing on $\log(HR_{10})$ and calculating lower and upper bounds for this quantity, which are then exponentiated.
-
-$SE(\log(HR_{10}))=SE(\log(\frac{\exp(\beta_1+\beta_2z+\beta_3z)}{\exp(\beta_2z)}))=SE(\log(\exp(\beta_1+\beta_2z+\beta_3z)-\log(\exp(\beta_2z)))=SE(\beta_1+\beta_3z)$
-
-This is calculated by using the delta method. Upper and lower bounds are then derived with $\exp(\log(HR_{10})\pm1.96\cdot SE(log(HR_{10})))$
-
-## Restricted cubic splines interaction model
-
-`interactionRCS` allows the continuous covariate $Z$ to be flexibly modeled with restricted cubic splines, with 3 knots ($k_1, k_2, k_3$). The interaction model, in this setting, takes the form:
-
-$h(t|x,z,c)=h_0\cdot\exp(\beta_1x+sp(z)+sp_2(z\cdot x))$  
-
-where
-
-$sp(z)=\alpha_1z+\alpha_2\cdot[\frac{(z-k_1)^3_+-(z-k_2)^3_+\cdot\frac{ k_2-k_1}{ k_3-k_2} +(z-k_3)^3\cdot\frac{k_3-k_1}{k_3-k_2}}{(k_3-k_1)^2}]$
-
-and 
-
-$sp_2(z\cdot x)=\gamma_1xz+\gamma_2x\cdot[\frac{(z-k_1)^3_+-(z-k_2)^3_+\cdot\frac{ k_3-k_1}{ k_3-k_2} +(z-k_3)^3\cdot\frac{k_2-k_1}{k_3-k_2}}{(k_3-k_1)^2}]$
-
-
-After estimation of the model, we want to predict the HR for $X$ over levels of $Z$. This is given by
-
-
-$HR_{10}=\frac{h(t|X=x_1,Z)}{h(t|X=x_2,Z)}=\frac{h_0\cdot\exp(\beta_1x_1+sp(z)+sp_2(z)\cdot x_1)}{h_0\cdot\exp(\beta_1x_2+sp(z)+sp_2(z)\cdot x_2)}=\frac{h(t|X=x_1,Z)}{h(t|X=x_2,Z)}=\frac{\exp(\beta_1+sp(z)+sp_2(z))}{\exp(sp(z))}$  ,
-
-which will be plotted against $Z$
-
-Similarly to the previous situation, the $SE$ can be derived by using the delta method to calculate $SE(\beta_1+sp_2(z))$
-
-
-# How to use the interactionRCS package 
-
-Functions within the `interactionRCS` package require that a Cox model has already been estimated and model results be provided as an object. Because of its flexibility in dealing with restricted cubic splines, `interactionRCS` requires the Cox model to be fitted with the `cph` function of  `rms` package. 
-
-The main functions of `interactionRCS` are `rcsHR` and `loglinHR`. The first one will provide point estimates and confidence intervals for the  HRs of $X$ when $Z$ is modeled with restricted cubic splines (specifically using 3 knots). The second function will instead provide HRs of $X$ in the setting where $Z$ is included in the model as a continuous covariate thus assuming a log-liner effect additive interaction on the log-linear scale. For both functions, the following options must be specified: 
-
-* `model`: the `cph` model previously run (linlogHR accepts `coxph` objects too)
-* `var1`: the name of the main predictor of interest ($X$)
-* `var2`: the name of the continuous predictor interacting with `var1` ($Z$)
-* `var2values`: the values of $var2$ for which the HR of $var1$ should be calculated
-
-Additional options include:
-
-* `data`: the same dataset used for fitting the Cox model (only used for bootstrap CIs). If data=NULL, we will search for model$x
-* `ci` (default TRUE) : whether a confidence interval for each HR should also be provided
-* `ci.method`: either `"delta"` or `"bootstrap"`. Default `"delta"`
-* `ci.boot.method` (default= "percentile" - only if `method="bootstrap"`) : see `boot.ci` type parameter 
-* `R` (default=100 - only if `method="bootstrap"`) : number of bootstrap iterations
-* `parallel` (default "multicore" - only if `method="bootstrap"`): see `boot.ci` reference 
-
-A third function `plotHR` is also implemented to provide a graphical display of the results and only require the `rcsHR` or `loglinHR` results as object. 
-
-
-# Illustrative examples
-
-The first example is based on a study on drug relapse among 575 patients enrolled in a clinical trial of residential treatment for drug abuse. The main exposure of interest is the binary indicator of assigned treatment (0/1) and a treatment*age interaction is specified.
-
-The following code provides an estimate of the treatment HR at different ages, when age is modeled with restricted cubic splines. The model is further adjusted for tumor site, race, and previous use of IV drug. It is recommended to check the distribution of $Z$ (here, age) to define a realistic range of `var2values`. Finally, the code is replicated by using the delta method or bootstrap for obtaining confidence intervals. Note that when `ci.method = "bootstrap"` is specified, additional options can be specified. Figure in \autoref{fig:example}
+In practice, interaction assessment is commonly conducted by including a product term between the two predictors of interest in a statistical model. For instance, in a RCT investigating the effect of a novel treatment on cardiovascular mortality researchers might fit a Cox PH regression that includes a first term for treatment, a second term for the second predictor, and a third term for the interaction between treatment and the other predictor. If the second predictor was a binary variable (e.g. participants sex), the treatment effect would be summarized with two different parameters, one for each value of sex. On the other hand, with a continuous predictor such as age, the effect of the main predictor would require some graphical presentation. Figure 1 provides an example of such graphical presentation presenting the treatment effect, in the form of a hazard ratio (HR), over levels of participants age.(this figure is a place holder, will use a nice exaple that clearly shows linearity and then non-linearity)
 
 ![Caption for example figure.\label{fig:example}](figure1.png)
 
+When dealing with continuous predictors such as age, researchers need to take into account the linearity assumptions made by the different statistical models. In particular, the most common statistical approaches used in clinical research share an assumption of linearity either on the response (linear regression), on the logit of the event probability (logistic regression), or on the logarithm of the hazard ratio (Cox PH regression). In the context of interaction analysis, this not only implies that the effect of each continuous predictor will be linear on the underlying scale, but also that the interaction term will be linear. Using the example presented in Figure 1, the treatment effect changes over age levels in a log-linear fashion. This assumption is often not met in real data, and different approaches to relax linearity exist. Among them, modeling continuous predictors with restricted cubic splines represent one of the most flexible approaches, currently recommended by several guidelines and researchers.(@greenland1995dose, @von2007strengthening, @durrleman1989flexible) An introduction to restricted cubic splines can be found in Chapter 2.4 of @harrell2017regression. On our github page we provide a detailed presentation of the mathematical formulation for linear, logistic, and Cox regression models, when an interaction is included and modeled with restricted cubic splines. By using this flexible approach, the linearity assumption is relaxed and the interaction effect can be graphically displayed with a smooth and flexible function that more accurately captures how the main effect changes over levels of the other predictors. Figure 2 presents the treatment/age interaction previously described, now flexibly modeled with this approach.(figure is a place holder, need to find one where we clearly see a smooth non linear function)
 
-# Final remarks
+![Caption for example figure.\label{fig:example}](figure1.png)
+
+To the best of our knowledge, simple procedures to obtain such graphical presentation of interaction effects, while allowing for flexible restricted cubic splines modeling, are unavailable in all major statistical software. The `interactionRCS` package that we have developed includes a set of functions that allows deriving these graphical presentations after fitting a linear, logistic, or a Cox PH regression model in `R`. The package .... quick description of the main features to be added after the package has been finalized.
+
 
 # References
 

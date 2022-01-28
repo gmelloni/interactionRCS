@@ -159,6 +159,7 @@ AIC(model2_rcs)
 
 ## Log-linear interaction model
 
+### Cox PH regression 
 A basic Cox model with 2 predictors and their interaction takes the form:
 
 $h(t|x,z)=h_0\cdot\exp(\beta_1x+\beta_2z+\beta_3x\cdot z)$  
@@ -176,9 +177,46 @@ $SE(\log(HR_{10}))=SE(\log(\frac{\exp(\beta_1+\beta_2z+\beta_3z)}{\exp(\beta_2z)
 
 This is calculated by using the delta method. Upper and lower bounds are then derived with $\exp(\log(HR_{10})\pm1.96\cdot SE(log(HR_{10})))$
 
+### Logistic regression
+A logistic regression model with 2 predictors and their interaction takes the form:
+
+$logit(p|x,z)=\beta_0+\beta_1x+\beta_2z+\beta_3x\cdot z$  
+
+After estimation of the model, we want to predict the OR for $X$ over levels of $Z$. This is given by
+
+
+$OR_{10}=\frac{odds(p|x=1,z)}{odds(p|x=0,z)}=\frac{\exp(\beta_0+\beta_1x+\beta_2z+\beta_3x\cdot z)}{\exp(\beta_0+\beta_1x+\beta_2z+\beta_3x\cdot z)}=\frac{\exp(\beta_0+\beta_1+\beta_2z+\beta_3z)}{\exp(\beta_0+\beta_2z)}$  ,
+
+which will be plotted against $Z$
+
+To estimate $95\%$ confidence intervals $SE(OR_{10})$ is required. This is obtained by focusing on $\log(OR_{10})$ and calculating lower and upper bounds for this quantity, which are then exponentiated.
+
+$SE(\log(HR_{10}))=SE(\log(\frac{\exp(\beta_0+\beta_1+\beta_2z+\beta_3z)}{\exp(\beta_0+\beta_2z)}))=SE(\log(\exp(\beta_0+\beta_1+\beta_2z+\beta_3z)-\log(\exp(\beta_0+\beta_2z)))=SE(\beta_1+\beta_3z)$
+
+This is calculated by using the delta method. Upper and lower bounds are then derived with $\exp(\log(OR_{10})\pm1.96\cdot SE(log(OR_{10})))$
+
+### Linear regression
+A linear regression model with 2 predictors and their interaction takes the form:
+
+$E[Y|x,z]=\beta_0+\beta_1x+\beta_2z+\beta_3x\cdot z$  
+
+After estimation of the model, we want to predict the effect for $X$ over levels of $Z$. This is given by
+
+
+$E[Y|x=1,z]-E[Y=0|x,z]=(\beta_0+\beta_1+\beta_2z+\beta_3\cdot z) -(\beta_0+\beta_2z)=\beta_1+\beta_3\cdot z$  ,
+
+which will be plotted against $Z$
+
+To estimate $95\%$ confidence intervals we need the basic linear combination of standard errors calculated by $SE(\beta_1+\beta_3z)=\sqrt{SE(\beta_1)^2+SE(\beta_3z)^2+2cov(\beta_1,\beta_3)z}$, 
+
+or by using the Delta method
+
 ## Restricted cubic splines interaction model
 
-`interactionRCS` allows the continuous covariate $Z$ to be flexibly modeled with restricted cubic splines, with 3 knots ($k_1, k_2, k_3$). The interaction model, in this setting, takes the form:
+`interactionRCS` allows the continuous covariate $Z$ to be flexibly modeled with restricted cubic splines, with 3 knots ($k_1, k_2, k_3$). 
+
+### Cox PH regression
+The interaction model, in this setting, takes the form:
 
 $h(t|x,z,c)=h_0\cdot\exp(\beta_1x+sp(z)+sp_2(z\cdot x))$  
 
@@ -202,3 +240,30 @@ Similarly to the previous situation, the $SE$ can be derived by using the delta 
 
 
 
+### Logistic regression
+The interaction model, in this setting, takes the form:
+
+$logit(p|x,z)=\beta_0+\beta_1x+sp(z)+sp_2(z\cdot x)$  
+
+
+After estimation of the model, we want to predict the HR for $X$ over levels of $Z$. This is given by
+
+
+$OR_{10}=\frac{\exp(\beta_0+\beta_1+sp(z)+sp_2(z))}{\beta_0+\exp(sp(z))}$  ,
+
+which will be plotted against $Z$
+
+Similarly to the previous situation, the $SE$ can be derived by using the delta method to calculate $SE(\beta_1+sp_2(z))$
+
+### Linear regression
+The interaction model, in this setting, takes the form:
+
+$E[Y|x,z]=\beta_0+\beta_1x+sp(z)+sp_2(z\cdot x)$  
+
+After estimation of the model, we want to predict 
+
+$E[Y|x=1,z]-E[Y=0|x,z]=(\beta_0+\beta_1+sp(z)+sp_2(z)) -(\beta_0+sp(z))=\beta_1+sp_2(z)$  ,
+
+which will be plotted against $Z$
+
+The $SE$ can be derived by using the delta method to calculate $SE(\beta_1+sp_2(z))$
