@@ -52,7 +52,7 @@ Additional options include:
 * `R` (default=100 - only if `method="bootstrap"`) : number of bootstrap iterations
 * `parallel` (default "multicore" - only if `method="bootstrap"`): see `boot.ci` reference 
 
-A third function `plotHR` is also implemented to provide a graphical display of the results and only require the `rcsHR` or `loglinHR` results as object. 
+A third function `plotINT` is also implemented to provide a graphical display of the results and only require the `rcsHR` or `loglinHR` results as object. 
 
 # Example 1
 
@@ -68,13 +68,13 @@ model_rcs <- cph(myformula , data = umaru , x = TRUE , y=TRUE)
 HR_rcs_delta <- rcsHR( var2values = c(20:50)
                      , model = model_rcs , data = umaru , var1 ="treat", var2="age" ,ci.method = "delta")
 
-plotHR(HR_rcs_delta , xlab = "Age")
+plotINT(HR_rcs_delta , xlab = "Age")
 
 HR_rcs_boot <- rcsHR( var2values = c(20:50)
                       , model = model_rcs , data = umaru , var1 ="treat", var2="age" , ci.method = "bootstrap"
                       , ci.boot.method = "norm" , R = 500 , parallel = "multicore")
 
-plotHR(HR_rcs_boot , xlab = "Age")
+plotINT(HR_rcs_boot , xlab = "Age")
 ```
 
 The following code replicates the same analysis in the setting where the interaction model was specified without modeling the continuous covariate $Z$ with restricted cubic splines (log-linear interaction model). The `loglinHR` function used in this context requires the same options of `rcsHR`
@@ -87,13 +87,13 @@ model_loglin <- cph(myformula , data = umaru , x = TRUE , y=TRUE)
 HR_loglin_delta <- loglinHR( var2values = c(20:50)
                      , model = model_loglin , data = umaru , var1 ="treat", var2="age", ci.method = "delta")
 
-plotHR(HR_loglin_delta , xlab = "Age")
+plotINT(HR_loglin_delta , xlab = "Age")
 
 HR_loglin_boot <- loglinHR( var2values = c(20:50)
                       , model = model_loglin , data = umaru , var1 ="treat", var2="age", ci.method = "bootstrap"
                       , ci.boot.method = "norm" , R = 500 , parallel = "multicore")
 
-plotHR(HR_loglin_boot , xlab = "Age")
+plotINT(HR_loglin_boot , xlab = "Age")
 ```
 
 
@@ -112,7 +112,7 @@ model2_rcs <- cph(myformula , data = nafld1 , x = TRUE , y=TRUE)
 HR2_rcs_delta <- rcsHR( var2values = c(15:50)
                      , model = model2_rcs , data = nafld1 , var1 ="age", var2="bmi" , ci=TRUE , conf = 0.95 , ci.method = "delta")
 
-plotHR(HR2_rcs_delta , xlab = "BMI")
+plotINT(HR2_rcs_delta , xlab = "BMI")
 
 ```
 
@@ -129,7 +129,7 @@ model3_rcs <- cph(myformula , data = nafld1 , x = TRUE , y=TRUE)
 HR3_rcs_delta <- rcsHR( var2values = c(15:50)
                      , model = model3_rcs , data = nafld1 , var1 ="age5", var2="bmi" , ci=TRUE , conf = 0.95 , ci.method = "delta")
 
-plotHR(HR3_rcs_delta , xlab = "BMI")
+plotINT(HR3_rcs_delta , xlab = "BMI")
 
 ```
 
@@ -145,7 +145,7 @@ model2_loglin <- cph(myformula , data = nafld1 , x = TRUE , y=TRUE)
 HR2_loglin_delta <- loglinHR( var2values = c(15:50)
                      , model = model2_loglin , data = nafld1 , var1 ="age", var2="bmi" , ci=TRUE , conf = 0.95 , ci.method = "delta")
 
-plotHR(HR2_loglin_delta , xlab = "BMI")
+plotINT(HR2_loglin_delta , xlab = "BMI")
 
 AIC(model2_loglin)
 AIC(model2_rcs)

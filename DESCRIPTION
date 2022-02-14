@@ -33,7 +33,8 @@ Imports:
     rms,
     boot,
     pspline,
-    pryr
+    pryr,
+    mlbench
 Suggests:
     knitr,
     rmarkdown,

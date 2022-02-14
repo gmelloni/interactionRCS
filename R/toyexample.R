@@ -101,3 +101,19 @@
 # ci.boot.method="perc"
 # parallel = "multicore"
 # R = 100
+
+#------------#
+# OR example #
+#------------#
+# library(mlbench)
+# data(PimaIndiansDiabetes)
+# myformula <- diabetes ~ mass + age * rcs(glucose, 3)
+# model <- lrm(myformula , data = PimaIndiansDiabetes )
+# var2values = 20:50
+# model = model
+# data = PimaIndiansDiabetes
+# var1 ="age"
+# var2="glucose"
+# ci=TRUE
+# conf = 0.95
+# ci.method = "delta"
