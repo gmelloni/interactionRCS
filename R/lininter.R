@@ -6,7 +6,7 @@
   mymodel <- eval(mycall)
   # mymodel <- cph(model$sformula, data=df)
   coefMod <- coef(mymodel)
-  if("lrm" %in% class(model)){
+  if("Glm" %in% class(model)){
     separator <- " * "
   } else {
     separator <- ":"
@@ -86,7 +86,7 @@ linLIN <- function(var2values , model , data , var1 , var2
   }
   coefMod <- coef(model)
   # Different styles to name the interaction term between lrm and glm
-  if("lrm" %in% class(model)){
+  if("Glm" %in% class(model)){
     separator <- " * "
   } else {
     separator <- ":"
