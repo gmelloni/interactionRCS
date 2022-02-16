@@ -16,7 +16,7 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-#devtools::install_github("https://github.com/gmelloni/interactionRCS.git")
+# devtools::install_github("https://github.com/gmelloni/interactionRCS.git")
 knitr::opts_chunk$set(echo = TRUE)
 
 library(survival)
@@ -33,7 +33,7 @@ The `interactionRCS` package is designed to facilitate interpretation and presen
 
 # How to use the interactionRCS package 
 
-Functions within the `interactionRCS` package require that a regression model has already been estimated and model results be provided as an object. Because of their flexibility in dealing with restricted cubic splines, `interactionRCS` requires the Cox model to be fitted with the `cph` function of  `rms` package. 
+Functions within the `interactionRCS` package require that a regression model has already been estimated and model results be provided as an object. Models with linear and log-linear interactions can be run with standard function (i.e. `glm` for linear and logistic, `coxph` for survival). To model interactions with restricted cubic splines, on the other hand, `interactionRCS` requires models to be run with more flexible functions from the `rms` package (specifically `Glm`, `lrm`, and `cph`). 
 
 The main functions of `interactionRCS` are:
 
