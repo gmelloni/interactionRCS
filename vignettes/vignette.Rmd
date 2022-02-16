@@ -28,12 +28,12 @@ data(umaru, package = "interactionRCS")
 
 # Introduction
 
-The `interactionRCS` package is designed to facilitate interpretation and presentation of results from a regression model(linear, logistic, COX) where an interaction between the main predictor of interest $X$ (binary or continuous) and another continuous covariate $Z$ has been specified. Specifically, the package will provide point estimates of the main effect of $X$ over levels of $Z$, allowing for settings where $Z$ is flexibly modeled with restricted cubic splines, and provide a graphical display of this interaction. Two methods for deriving and plotting confidence intervals are also implemented, including the delta method and bootstrap.
+The `interactionRCS` package is designed to facilitate interpretation and presentation of results from a regression model (linear, logistic, Cox) where an interaction between the main predictor of interest $X$ (binary or continuous) and another continuous covariate $Z$ has been specified. Specifically, the package will provide point estimates of the main effect of $X$ over levels of $Z$, allowing for settings where $Z$ is flexibly modeled with restricted cubic splines, and provide a graphical display of this interaction. Two methods for deriving and plotting confidence intervals are also implemented, including the delta method and bootstrap.
 
 
 # How to use the interactionRCS package 
 
-Functions within the `interactionRCS` package require that a regression model has already been estimated and model results be provided as an object. Models with linear and log-linear interactions can be run with standard function (i.e. `glm` for linear and logistic, `coxph` for survival). To model interactions with restricted cubic splines, on the other hand, `interactionRCS` requires models to be run with more flexible functions from the `rms` package (specifically `Glm`, `lrm`, and `cph`). 
+Functions within the `interactionRCS` package require that a regression model has already been estimated and model results be provided as an object. Models with linear and log-linear interactions can be run with standard function (i.e. `glm` for linear and logistic, `coxph` for survival). To model interactions with restricted cubic splines, however, `interactionRCS` requires models to be run with more flexible functions from the `rms` package (specifically `Glm`, `lrm`, and `cph`). 
 
 The main functions of `interactionRCS` are:
 
@@ -43,21 +43,21 @@ The main functions of `interactionRCS` are:
 
 The `rcs-` functions will provide point estimates and confidence intervals for the  effect of $X$ when $Z$ is modeled with restricted cubic splines (specifically using 3 knots). The `lin-` and `loglin-` functions will instead provide effects of $X$ in the setting where $Z$ is included in the model as a continuous covariate thus assuming a linear (for linear regression) or log-liner (for logistic and COX) additive interactions. For all functions, the following options must be specified: 
 
-* `model`: the model previously run (`linlogHR` accepts `coxph` objects too)
+* `model`: the model previously run 
 * `var1`: the name of the main predictor of interest ($X$)
 * `var2`: the name of the continuous predictor interacting with `var1` ($Z$)
 * `var2values`: the values of $var2$ for which the HR of $var1$ should be calculated
 
 Additional options include:
 
-* `data`: the same dataset used for fitting the Cox model (only used for bootstrap CIs). If data=NULL, we will search for model$x
-* `ci` (default TRUE) : whether a confidence interval for each HR should also be provided
+* `data`: the same dataset used for fitting the model (only used for bootstrap CIs). If data=NULL, we will search for model$x
+* `ci` (default TRUE) : whether a confidence interval for each effect estimate should also be provided
 * `ci.method`: either `"delta"` or `"bootstrap"`. Default `"delta"`
 * `ci.boot.method` (default= "percentile" - only if `method="bootstrap"`) : see `boot.ci` type parameter 
 * `R` (default=100 - only if `method="bootstrap"`) : number of bootstrap iterations
 * `parallel` (default "multicore" - only if `method="bootstrap"`): see `boot.ci` reference 
 
-A third function `plotINT` is also implemented to provide a graphical display of the results and only require the `rcs-`, `loglin-`, or `lin-` results as object. 
+An additional function `plotINT` is also implemented to provide a graphical display of the results and only require the `rcs-`, `loglin-`, or `lin-` results as object. 
 
 # Example 1
 
@@ -158,7 +158,7 @@ AIC(model2_rcs)
 
 
 
-# Appendix
+# Appendix - theoretical background
 
 `interactionRCS` requires results from a regression model where an interaction between a main predictor (binary or continuous) $X$ and a continuous predictor $Z$ has been specified. This interaction can be included as a simple product term between the 2 predictors, or by flexibly modeling $Z$ with restricted cubic splines. For both interaction settings, the main exposure of interest $X$ has to either be binary or continuous.  
 
