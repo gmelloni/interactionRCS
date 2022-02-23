@@ -1,5 +1,6 @@
 inst/extdata/vignette.html
 R/toyexample.R
-figure1.png
-paper.bib
-paper.md
+figure*
+paper*
+.RData
+.Rhistory

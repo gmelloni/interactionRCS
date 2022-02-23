@@ -9,20 +9,25 @@
   mymodel <- eval(mycall)
   coefMod <- coef(mymodel)
   ##### SHOULD THE NODES BE GLOBAL OR RUN SPECIFIC? HERE SPECIFIC
-  # if(missing(k)){
-    # k <- attributes(rcs(df[[var2]], 3))$parms
-  k <- mymodel$Design$parms[[var2]]
+  if("cph" %in% class(model)){
+    separator <- " * "
+    k <- mymodel$Design$parms[[var2]]
+  } else {
+    separator <- ":"
+    k <- attributes(rms::rcs(df[[var2]], 3))$parms
+    rcsTerm <- grep(":" , grep("rcs\\(" , attributes(mymodel$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
+    names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
+  }
   k2k1 <- (k[2] - k[1])/(k[3] - k[2])
   k3k1 <- (k[3] - k[1])/(k[3] - k[2])
-  # }
-  # k <- attributes(rcs(df[[var2]], 3))$parms # like this knots are unique for every run
+  # Could be rcs(var2)*var1 or var1*rcs(var2). We search for both versions
   myvars <- intersect( c(var1 , var2
                          , paste0(var2 , "'")
-                         , paste(var1 , var2 , sep = " * ")
-                         , paste(var2 , var1 , sep = " * ")
-                         , paste(var1 , paste0(var2 , "'") , sep = " * ")
-                         , paste(paste0(var2 , "'"),var1 , sep = " * "))
-                         , names(coefMod))
+                         , paste(var1 , var2 , sep = separator)
+                         , paste(var2 , var1 , sep = separator)
+                         , paste(var1 , paste0(var2 , "'") , sep = separator)
+                         , paste(paste0(var2 , "'"),var1 , sep = separator))
+                       , names(coefMod))
   mycoef <- coefMod[  myvars ]
   mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
   a <- mycoef[ c(var2 , paste0(var2,"'"))]
@@ -44,9 +49,9 @@
 #' specified points of another interacting variable splined with rcs(df = 3)
 #'
 #' @param var2values numeric vector of var2 points to estimate
-#' @param model model of class cph. If data is NULL, the function expects to find the data in model$x.
-#' @param data data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap
-#' @param var1 variable that increases by 1 unit from 0
+#' @param model model of class cph or coxph. If data is NULL, the function expects to find the data in model$x.
+#' @param data data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap and coxph models
+#' @param var1 variable that increases by 1 unit from 0.
 #' @param var2 variable to spline. var2values belong to var2
 #' @param ci calculate 95% CI?
 #' @param conf confidence level. Default 0.95
@@ -62,8 +67,8 @@
 #' myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age,3)*sex
 #' model <- cph(myformula , data = lung )
 #' rcsHR( var2values = 40:80
-#'                      , model = model , data = lung , var1 ="sex", var2="age"
-#'                      , ci=TRUE , conf = 0.95 , ci.method = "delta")
+#'        , model = model , data = lung , var1 ="sex", var2="age"
+#'        , ci=TRUE , conf = 0.95 , ci.method = "delta")
 #' @return if ci = FALSE, a dataframe with initial values and HR
 #' , if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
 #' @importFrom rms cph rcs
@@ -77,8 +82,8 @@ rcsHR <- function(var2values , model , data=NULL , var1 , var2
   , ci=TRUE , conf = 0.95 , ci.method = "delta"
   , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
   # Check correct class for model
-  if( !all( c("cph","rms","coxph") %in% class(model) ) ){
-    stop("Cubic spline Cox model must be run with rms::cph")
+  if( !any( c("cph","coxph") %in% class(model) ) ){
+    stop("Cubic spline Cox model must be run with rms::cph or survival::coxph")
   }
   if(!is.numeric(var2values)){
     stop("var2values must be a numeric vector")
@@ -86,7 +91,9 @@ rcsHR <- function(var2values , model , data=NULL , var1 , var2
   x <- var2values
   if(missing(data)){
     if(is.null(model$x)){
-      stop("Missing data")
+      if("bootstrap" %in% ci.method || class(model)[1] == "coxph"){
+        stop("Missing data")
+      }
     } else {
       data <- model$x
     }
@@ -102,23 +109,29 @@ rcsHR <- function(var2values , model , data=NULL , var1 , var2
   # }
 
   coefMod <- coef(model)
-  # k <- attributes(rms::rcs(data[[var2]], 3))$parms
-  k <- model$Design$parms[[var2]]
+  if("cph" %in% class(model)){
+    k <- model$Design$parms[[var2]]
+    separator <- " * "
+  } else {
+    separator <- ":"
+    # need to recreate the knot sequence for object of class coxph
+    k <- attributes(rms::rcs(data[[var2]], 3))$parms
+    # remove the rcs part from the names of the variables in case of a class coxph model
+    rcsTerm <- grep(":" , grep("rcs\\(" , attributes(model$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
+    names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
+  }
   k2k1 <- (k[2] - k[1])/(k[3] - k[2])
   k3k1 <- (k[3] - k[1])/(k[3] - k[2])
   # Extract parameters
-  # beta1 <- coefMod["score.sd"]
-  # alph <- coefMod[c("age" , "age'")]
-  # lamb <- coefMod[c("score.sd * age" , "score.sd * age'")]
   # Could be rcs(var2)*var1 or var1*rcs(var2). We search for both versions
   myvars <- intersect( c(var1 , var2
                         , paste0(var2 , "'")
-                        , paste(var1 , var2 , sep = " * ")
-                        , paste(var2 , var1 , sep = " * ")
-                        , paste(var1 , paste0(var2 , "'") , sep = " * ")
-                        , paste(paste0(var2 , "'"),var1 , sep = " * "))
+                        , paste(var1 , var2 , sep = separator)
+                        , paste(var2 , var1 , sep = separator)
+                        , paste(var1 , paste0(var2 , "'") , sep = separator)
+                        , paste(paste0(var2 , "'"),var1 , sep = separator))
                       , names(coefMod))
-  if(length(myvars)!=5) stop("either var1 or var2 is not in the interaction!")
+  if(length(myvars)!=5) stop("either var1 or var2 is not in the interaction or is not numeric")
   mycoef <- coefMod[  myvars ]
   mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
   a <- mycoef[ c(var2 , paste0(var2,"'"))]
@@ -167,7 +180,7 @@ rcsHR <- function(var2values , model , data=NULL , var1 , var2
       rownames(HRci) <- x
       colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U" , "SE")
       HRci <- as.data.frame(HRci)
-      class(HRci) <- c("HR" , class(HRci))
+      # class(HRci) <- c("HR" , class(HRci))
       return(HRci)
     } else if(ci.method == "bootstrap"){
       if(missing(parallel)){

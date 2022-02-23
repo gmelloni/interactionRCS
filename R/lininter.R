@@ -31,7 +31,7 @@
 #' specified points of another interacting variable in a linear interaction model
 #'
 #' @param var2values numeric vector of var2 points to estimate
-#' @param model model of class Glm or glm. If data is NULL, the function expects to find the data in model$x
+#' @param model model of class rms::Glm or stats::glm family gaussian. If data is NULL, the function expects to find the data in model$x
 #' @param data data used in the model. If absent, it will attempt to recover the data from the model object. Only used for bootstrap CI
 #' @param var1 variable that increases by 1 unit from 0
 #' @param var2 variable to spline. var2values belong to var2

@@ -22,8 +22,8 @@
 #' myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age, 3)*sex
 #' model <- cph(myformula , data = lung )
 #' myHR <- rcsHR( var2values = 40:80
-#'                      , model = model , data = lung , var1 ="sex", var2="age"
-#'                      , ci=TRUE , conf = 0.95 , ci.method = "delta")
+#'                , model = model , data = lung , var1 ="sex", var2="age"
+#'                , ci=TRUE , conf = 0.95 , ci.method = "delta")
 #' plotINT(myHR , ylab = "HR of male VS female" , xlab = "Age")
 #' @importFrom pspline sm.spline
 #' @importFrom graphics par lines abline plot

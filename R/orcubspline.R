@@ -4,8 +4,8 @@
 #' specified points of another interacting variable splined with rcs(df = 3)
 #'
 #' @param var2values numeric vector of var2 points to estimate
-#' @param model model of class lrm. If data is NULL, the function expects to find the data in model$x.
-#' @param data data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap
+#' @param model model of class lrm or glm family binomial. If data is NULL, the function expects to find the data in model$x.
+#' @param data data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap and glm class models
 #' @param var1 variable that increases by 1 unit from 0
 #' @param var2 variable to spline. var2values belong to var2
 #' @param ci calculate 95% CI?
@@ -23,7 +23,7 @@
 #' PimaIndiansDiabetes$age <- PimaIndiansDiabetes$age/5
 #' # Recode diabetes as 0/1
 #' PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
-#' myformula <- diabetes ~ mass + age * rcs(glucose, 3)
+#' myformula <- diabetes ~ mass + age * rcs( glucose , 3 )
 #' model <- lrm(myformula , data = PimaIndiansDiabetes )
 #' rcsOR( var2values = 20:80
 #'        , model = model , data = PimaIndiansDiabetes , var1 ="age", var2="glucose"
@@ -41,8 +41,17 @@ rcsOR <- function(var2values , model , data=NULL , var1 , var2
                   , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
   # argg <- c(as.list(environment()), list(...))
   # Check correct class for model
-  if( !all( c("lrm","rms","glm") %in% class(model) ) ){
-    stop("Cubic spline Logistic model must be run with rms::lrm")
+  if( !any( c("lrm","glm") %in% class(model) ) ){
+    stop("Cubic spline Logistic model must be run with rms::lrm or stats::glm")
+  }
+  if("glm" %in% class(model) && !"lrm" %in% class(model)){
+    if(!"binomial" %in% model$family$family){
+      stop("model of class glm but not family binomial")
+    } else {
+      modelClass <- "glm"
+    }
+  } else {
+    modelClass <- "lrm"
   }
   if(!is.numeric(var2values)){
     stop("var2values must be a numeric vector")
@@ -50,7 +59,9 @@ rcsOR <- function(var2values , model , data=NULL , var1 , var2
   x <- var2values
   if(missing(data)){
     if(is.null(model$x)){
-      stop("Missing data")
+      if("bootstrap" %in% ci.method || modelClass == "glm"){
+        stop("Missing data")
+      }
     } else {
       data <- model$x
     }
@@ -66,8 +77,17 @@ rcsOR <- function(var2values , model , data=NULL , var1 , var2
   # }
 
   coefMod <- coef(model)
-  # k <- attributes(rms::rcs(data[[var2]], 3))$parms
-  k <- model$Design$parms[[var2]]
+  if(modelClass == "lrm"){
+    k <- model$Design$parms[[var2]]
+    separator <- " * "
+  } else {
+    separator <- ":"
+    # need to recreate the knot sequence for object of class glm
+    k <- attributes(rms::rcs(data[[var2]], 3))$parms
+    # remove the rcs part from the names of the variables in case of a class glm model
+    rcsTerm <- grep(":" , grep("rcs\\(" , attributes(model$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
+    names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
+  }
   k2k1 <- (k[2] - k[1])/(k[3] - k[2])
   k3k1 <- (k[3] - k[1])/(k[3] - k[2])
   # Extract parameters
@@ -77,12 +97,12 @@ rcsOR <- function(var2values , model , data=NULL , var1 , var2
   # Could be rcs(var2)*var1 or var1*rcs(var2). We search for both versions
   myvars <- intersect( c(var1 , var2
                          , paste0(var2 , "'")
-                         , paste(var1 , var2 , sep = " * ")
-                         , paste(var2 , var1 , sep = " * ")
-                         , paste(var1 , paste0(var2 , "'") , sep = " * ")
-                         , paste(paste0(var2 , "'"),var1 , sep = " * "))
+                         , paste(var1 , var2 , sep = separator)
+                         , paste(var2 , var1 , sep = separator)
+                         , paste(var1 , paste0(var2 , "'") , sep = separator)
+                         , paste(paste0(var2 , "'"),var1 , sep = separator))
                        , names(coefMod))
-  if(length(myvars)!=5) stop("either var1 or var2 is not in the interaction!")
+  if(length(myvars)!=5) stop("either var1 or var2 is not in the interaction or is not numeric")
   mycoef <- coefMod[  myvars ]
   mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
   a <- mycoef[ c(var2 , paste0(var2,"'"))]
