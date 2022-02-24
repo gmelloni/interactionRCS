@@ -22,7 +22,7 @@ rcsLIN(
 \arguments{
 \item{var2values}{numeric vector of var2 points to estimate}
 
-\item{model}{model of class rms::Glm. If data is NULL, the function expects to find the data in model$x.}
+\item{model}{model of class rms::Glm or stats::glm family gaussian. If data is NULL, the function expects to find the data in model$x.}
 
 \item{data}{data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap}
 
@@ -59,7 +59,7 @@ data(PimaIndiansDiabetes)
 # Recode diabetes as 0/1
 PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
 myformula <- glucose ~ mass + diabetes * rcs(age, 3)
-model <- Glm(myformula , data = PimaIndiansDiabetes )
+model <- glm(myformula , data = PimaIndiansDiabetes , family="gaussian")
 # Show the effect on glucose of being diabetic at age 20 to 80
 rcsLIN( var2values = 20:80
        , model = model , data = PimaIndiansDiabetes , var1 ="diabetes", var2="age"

@@ -22,7 +22,7 @@ loglinOR(
 \arguments{
 \item{var2values}{numeric vector of var2 points to estimate}
 
-\item{model}{model of class lrm or glm. If data is NULL, the function expects to find the data in model$x}
+\item{model}{model of class lrm Glm or glm. If data is NULL, the function expects to find the data in model$x}
 
 \item{data}{data used in the model. If absent, it will attempt to recover the data from the model object. Only used for bootstrap CI}
 

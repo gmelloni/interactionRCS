@@ -25,12 +25,12 @@ plotINT(
 
 \item{ylab}{ylab name. Default is the estimate column name if log=FALSE otherwise Estimate(log scale)}
 
-\item{line1}{if TRUE, plot horizontal line on HR/OR = 1 or log(HR/OR) = 0}
+\item{line1}{if TRUE, plot horizontal line on 1 or 0 (if log=TRUE)}
 
 \item{color}{line color. Default dodgerblue}
 }
 \value{
-simple splined plot of your var2 values by HR
+simple splined plot of estimates of var1 at var2 values
 }
 \description{
 Create a spline var2 by 1 unit increase of var1
@@ -42,7 +42,7 @@ data(cancer)
 myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age, 3)*sex
 model <- cph(myformula , data = lung )
 myHR <- rcsHR( var2values = 40:80
-                     , model = model , data = lung , var1 ="sex", var2="age"
-                     , ci=TRUE , conf = 0.95 , ci.method = "delta")
+               , model = model , data = lung , var1 ="sex", var2="age"
+               , ci=TRUE , conf = 0.95 , ci.method = "delta")
 plotINT(myHR , ylab = "HR of male VS female" , xlab = "Age")
 }

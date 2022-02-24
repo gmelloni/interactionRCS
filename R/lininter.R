@@ -69,6 +69,16 @@ linLIN <- function(var2values , model , data , var1 , var2
   if( !any( c("Glm","glm") %in% class(model) ) ){
     stop("Interaction linear model must be run with rms::Glm or stats::glm")
   }
+  # Check correct family
+  if(!"gaussian" %in% model$family$family){
+    stop("model of class glm but not family gaussian")
+  } else {
+    if("glm" %in% class(model) && !"Glm" %in% class(model)){
+      modelClass <- "glm"
+    } else {
+      modelClass <- "Glm"
+    }
+  }
   if(!is.numeric(var2values)){
     stop("var2values must be a numeric vector")
   }

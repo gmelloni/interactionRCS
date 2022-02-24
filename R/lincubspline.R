@@ -87,14 +87,15 @@ rcsLIN <- function(var2values , model , data=NULL , var1 , var2
   if( !any( c("Glm","glm") %in% class(model) ) ){
     stop("Cubic spline Logistic model must be run with rms::Glm or stats::glm")
   }
-  if("glm" %in% class(model) && !"Glm" %in% class(model)){
-    if(!"gaussian" %in% model$family$family){
+  # Check correct family
+  if(!"gaussian" %in% model$family$family){
       stop("model of class glm but not family gaussian")
-    } else {
-      modelClass <- "glm"
-    }
   } else {
-    modelClass <- "Glm"
+    if("glm" %in% class(model) && !"Glm" %in% class(model)){
+      modelClass <- "glm"
+    } else {
+      modelClass <- "Glm"
+    }
   }
   if(!is.numeric(var2values)){
     stop("var2values must be a numeric vector")

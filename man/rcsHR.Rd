@@ -22,11 +22,11 @@ rcsHR(
 \arguments{
 \item{var2values}{numeric vector of var2 points to estimate}
 
-\item{model}{model of class cph. If data is NULL, the function expects to find the data in model$x.}
+\item{model}{model of class cph or coxph. If data is NULL, the function expects to find the data in model$x.}
 
-\item{data}{data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap}
+\item{data}{data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap and coxph models}
 
-\item{var1}{variable that increases by 1 unit from 0}
+\item{var1}{variable that increases by 1 unit from 0.}
 
 \item{var2}{variable to spline. var2values belong to var2}
 
@@ -59,6 +59,6 @@ data(cancer)
 myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age,3)*sex
 model <- cph(myformula , data = lung )
 rcsHR( var2values = 40:80
-                     , model = model , data = lung , var1 ="sex", var2="age"
-                     , ci=TRUE , conf = 0.95 , ci.method = "delta")
+       , model = model , data = lung , var1 ="sex", var2="age"
+       , ci=TRUE , conf = 0.95 , ci.method = "delta")
 }

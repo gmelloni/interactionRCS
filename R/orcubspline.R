@@ -4,7 +4,7 @@
 #' specified points of another interacting variable splined with rcs(df = 3)
 #'
 #' @param var2values numeric vector of var2 points to estimate
-#' @param model model of class lrm or glm family binomial. If data is NULL, the function expects to find the data in model$x.
+#' @param model model of class lrm, Glm or glm family binomial. If data is NULL, the function expects to find the data in model$x.
 #' @param data data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap and glm class models
 #' @param var1 variable that increases by 1 unit from 0
 #' @param var2 variable to spline. var2values belong to var2
@@ -41,10 +41,10 @@ rcsOR <- function(var2values , model , data=NULL , var1 , var2
                   , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
   # argg <- c(as.list(environment()), list(...))
   # Check correct class for model
-  if( !any( c("lrm","glm") %in% class(model) ) ){
-    stop("Cubic spline Logistic model must be run with rms::lrm or stats::glm")
+  if( !any( c("lrm","glm","Glm") %in% class(model) ) ){
+    stop("Cubic spline Logistic model must be run with rms::lrm, rms::Glm or stats::glm")
   }
-  if("glm" %in% class(model) && !"lrm" %in% class(model)){
+  if(any(c("glm","Glm") %in% class(model)) && !"lrm" %in% class(model)){
     if(!"binomial" %in% model$family$family){
       stop("model of class glm but not family binomial")
     } else {
@@ -77,7 +77,7 @@ rcsOR <- function(var2values , model , data=NULL , var1 , var2
   # }
 
   coefMod <- coef(model)
-  if(modelClass == "lrm"){
+  if(modelClass == "lrm" || "Glm" %in% class(model)){
     k <- model$Design$parms[[var2]]
     separator <- " * "
   } else {

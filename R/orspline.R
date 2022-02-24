@@ -31,7 +31,7 @@
 #' specified points of another interacting variable in a simple logistic interaction model
 #'
 #' @param var2values numeric vector of var2 points to estimate
-#' @param model model of class lrm or glm. If data is NULL, the function expects to find the data in model$x
+#' @param model model of class lrm Glm or glm. If data is NULL, the function expects to find the data in model$x
 #' @param data data used in the model. If absent, it will attempt to recover the data from the model object. Only used for bootstrap CI
 #' @param var1 variable that increases by 1 unit from 0
 #' @param var2 variable to spline. var2values belong to var2
@@ -67,8 +67,14 @@ loglinOR <- function(var2values , model , data , var1 , var2
                      , ci=TRUE , conf = 0.95 , ci.method = "delta"
                      , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
   # Check correct class for model
-  if( !any( c("lrm","glm") %in% class(model) ) ){
-    stop("Interaction Cox model must be run with rms::cph or stats::glm")
+  if( !any( c("lrm","glm","Glm") %in% class(model) ) ){
+    stop("Interaction Cox model must be run with rms::lrm, rms::Glm or stats::glm")
+  }
+  # Check correct family
+  if(!"lrm" %in% class(model)){
+    if(!"binomial" %in% model$family$family){
+      stop("model of class glm but not family binomial")
+    }
   }
   if(!is.numeric(var2values)){
     stop("var2values must be a numeric vector")
@@ -87,7 +93,7 @@ loglinOR <- function(var2values , model , data , var1 , var2
   }
   coefMod <- coef(model)
   # Different styles to name the interaction term between lrm and glm
-  if("lrm" %in% class(model)){
+  if(any(c("lrm","Glm") %in% class(model))){
     separator <- " * "
   } else {
     separator <- ":"
