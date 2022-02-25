@@ -25,7 +25,15 @@ devtools::install_github("https://github.com/gmelloni/interactionRCS.git")
 library(interactionRCS)
 ```
 
-### Vignette
+### Usage 
+After estimating a regression model (linear, logistic, Cox) such as `model<-glm(y~ ...)` estimate and plot interactions with:
+
+```
+int<-estINT(model=model, ...)
+
+plotINT(int, ...)
+```
+
 For a detailed introduction to `interactionRCS` and code examples please refer to this [vignette](https://raw.githack.com/gmelloni/interactionRCS/main/inst/extdata/vignette.html)
 
 ### Authors

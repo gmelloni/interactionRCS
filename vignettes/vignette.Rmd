@@ -57,6 +57,8 @@ Additional options include:
 * `R` (default=100 - only if `method="bootstrap"`) : number of bootstrap iterations
 * `parallel` (default "multicore" - only if `method="bootstrap"`): see `boot.ci` reference 
 
+The most recent update of the package has an additional function `intEST` that includes all previous function and can be used with any specified model (the function will understand whether the model is linear, logistic, or Cox, and whether the interactions is (log)linear or splines, and run the specific function out of the 6 available). 
+
 An additional function `plotINT` is also implemented to provide a graphical display of the results and only require the `rcs-`, `loglin-`, or `lin-` results as object. 
 
 # Example 1
@@ -70,12 +72,17 @@ The following code provides an estimate of the treatment HR at different ages, w
 myformula <- Surv(time, censor) ~ treat*rcs(age, 3) + site + nonwhite + ivdrug
 model_rcs <- cph(myformula , data = umaru , x = TRUE , y=TRUE)
 
-HR_rcs_delta <- rcsHR( var2values = c(20:50)
+HR_rcs_delta <- intEST( var2values = c(20:50)
                      , model = model_rcs , data = umaru , var1 ="treat", var2="age" ,ci.method = "delta")
 
 plotINT(HR_rcs_delta , xlab = "Age")
 
-HR_rcs_boot <- rcsHR( var2values = c(20:50)
+# note that the user could directly specify the function of interest (here rcsHR) and obtain the same results
+HR_rcs_delta <- rcsHR( var2values = c(20:50)
+                     , model = model_rcs , data = umaru , var1 ="treat", var2="age" ,ci.method = "delta")
+
+
+HR_rcs_boot <- intEST( var2values = c(20:50)
                       , model = model_rcs , data = umaru , var1 ="treat", var2="age" , ci.method = "bootstrap"
                       , ci.boot.method = "norm" , R = 500 , parallel = "multicore")
 
@@ -89,12 +96,12 @@ The following code replicates the same analysis in the setting where the interac
 myformula <- Surv(time, censor) ~ treat*age + site + nonwhite + ivdrug
 model_loglin <- cph(myformula , data = umaru , x = TRUE , y=TRUE)
 
-HR_loglin_delta <- loglinHR( var2values = c(20:50)
+HR_loglin_delta <- intEST( var2values = c(20:50)
                      , model = model_loglin , data = umaru , var1 ="treat", var2="age", ci.method = "delta")
 
 plotINT(HR_loglin_delta , xlab = "Age")
 
-HR_loglin_boot <- loglinHR( var2values = c(20:50)
+HR_loglin_boot <- intEST( var2values = c(20:50)
                       , model = model_loglin , data = umaru , var1 ="treat", var2="age", ci.method = "bootstrap"
                       , ci.boot.method = "norm" , R = 500 , parallel = "multicore")
 
@@ -114,7 +121,7 @@ myformula <- Surv(futime, status) ~ age*rcs(bmi, 3) + male
 model2_rcs <- cph(myformula , data = nafld1 , x = TRUE , y=TRUE)
 
 
-HR2_rcs_delta <- rcsHR( var2values = c(15:50)
+HR2_rcs_delta <- intEST( var2values = c(15:50)
                      , model = model2_rcs , data = nafld1 , var1 ="age", var2="bmi" , ci=TRUE , conf = 0.95 , ci.method = "delta")
 
 plotINT(HR2_rcs_delta , xlab = "BMI")
@@ -131,7 +138,7 @@ myformula <- Surv(futime, status) ~ age5*rcs(bmi, 3) + male
 model3_rcs <- cph(myformula , data = nafld1 , x = TRUE , y=TRUE)
 
 
-HR3_rcs_delta <- rcsHR( var2values = c(15:50)
+HR3_rcs_delta <- intEST( var2values = c(15:50)
                      , model = model3_rcs , data = nafld1 , var1 ="age5", var2="bmi" , ci=TRUE , conf = 0.95 , ci.method = "delta")
 
 plotINT(HR3_rcs_delta , xlab = "BMI")
@@ -147,7 +154,7 @@ The effect of age changes over levels of BMI in a quadratic form, with a lower e
 myformula <- Surv(futime, status) ~ age*bmi + male
 model2_loglin <- cph(myformula , data = nafld1 , x = TRUE , y=TRUE)
 
-HR2_loglin_delta <- loglinHR( var2values = c(15:50)
+HR2_loglin_delta <- intEST( var2values = c(15:50)
                      , model = model2_loglin , data = nafld1 , var1 ="age", var2="bmi" , ci=TRUE , conf = 0.95 , ci.method = "delta")
 
 plotINT(HR2_loglin_delta , xlab = "BMI")
