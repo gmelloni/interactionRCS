@@ -15,7 +15,7 @@ authors:
 affiliations:
  - name: TIMI Study Group, Brigham and Womens Hospital
    index: 1
- - name: Department of Cardiovascular Medicine, Harvard Medical School
+ - name: Division of Cardiovascular Medicine, Harvard Medical School
    index: 2
 date: 28 February 2022
 bibliography: paper.bib
