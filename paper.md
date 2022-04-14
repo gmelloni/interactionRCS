@@ -7,7 +7,7 @@ tags:
   - splines modeling
 authors:
   - name: Giorgio Melloni
-    orcid: 0000-0000-0000-0000
+    orcid: 0000-0001-6371-1334
     affiliation: "1, 2"
   - name: Andrea Bellavia
     orcid: 0000-0003-4988-4532
