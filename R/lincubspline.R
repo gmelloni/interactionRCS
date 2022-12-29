@@ -88,8 +88,8 @@ rcsLIN <- function(var2values , model , data=NULL , var1 , var2
     stop("Cubic spline Logistic model must be run with rms::Glm or stats::glm")
   }
   # Check correct family
-  if(!"gaussian" %in% model$family$family){
-      stop("model of class glm but not family gaussian")
+  if(!( "gaussian" %in% model$family$family | "quasi" %in% model$family$family)){
+      stop("model of class glm but not family gaussian nor quasi")
   } else {
     if("glm" %in% class(model) && !"Glm" %in% class(model)){
       modelClass <- "glm"
