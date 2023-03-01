@@ -81,6 +81,7 @@ intEST <- function(var2values , model , data , var1 , var2
     } else {
       stop("glm or Glm object not of family gaussian nor binomial")
     }
+
   } else {
     stop("Object of unrecognized class. coxph, cph, glm or Glm are all accepted")
   }
