@@ -22,6 +22,7 @@ if(!"devtools" %in% rownames(installed.packages())){
   install.packages("devtools")
 }
 devtools::install_github("https://github.com/gmelloni/interactionRCS.git")
+# or alternative devtools::install_git("https://github.com/gmelloni/interactionRCS.git")
 library(interactionRCS)
 ```
 
