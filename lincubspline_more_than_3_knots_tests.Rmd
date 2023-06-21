@@ -1,5 +1,5 @@
 ---
-title: "hrcubspline_more_than_3_knots"
+title: "lincubspline_more_than_3_knots"
 author: "Hong Xiong"
 date: "2023-06-08"
 output: pdf_document
@@ -9,7 +9,9 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r setup, include=FALSE}
+## Bootstrapping Helper Function
+
+```{r}
 # Some modifications to plotINT to add standard plot stuff with ...
 plotINT2 <- function(x , xlab = "" , main = "" , log = FALSE
                   , ylab = NULL ,line1 = TRUE,ylim=NULL
@@ -50,26 +52,16 @@ plotINT2 <- function(x , xlab = "" , main = "" , log = FALSE
   }
 }
 
-## Bootstrapping Helper Function
-.bootrcsHR_knot_more_than_3 <- function(data, idx , x , model , var1 , var2 , k , fixedknot){
-  df <- data[idx,]
+.bootrcsLIN <- function(data, idx , x , model , var1 , var2){
+  df <- data[idx, ]
   mycall <- model$call
   mycall <- pryr::modify_call(mycall , list(data=quote(df)))
-  if("cph" %in% class(model) | "lrm" %in% class(model)){
-    myformula <- model$sformula
-  } else {
-    myformula <- model$formula
-  }
-
   mymodel <- eval(mycall)
   coefMod <- coef(mymodel)
-  
-  if("cph" %in% class(model) | "lrm" %in% class(model)){
+
+  if("Glm" %in% class(mymodel)){
+    k <- mymodel$Design$parms[[var2]]
     separator <- " * "
-    # k is now a constant parameter
-    if(!fixedknot){
-      k <- mymodel$Design$parms[[var2]]
-    }
   } else {
     separator <- ":"
     # need to recreate the knot sequence for object of class coxph
@@ -77,13 +69,9 @@ plotINT2 <- function(x , xlab = "" , main = "" , log = FALSE
     rcsTerm <- grep(":" , grep("rcs\\(" , attributes(mymodel$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
     names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
     indices <- length(grep(paste0("^", var2, "'*$"), names(coefMod)))+1
-    if(!fixedknot){
-      k <- attributes(rms::rcs(df[[var2]], indices))$parms
-    }
+    k <- attributes(rms::rcs(df[[var2]], indices))$parms
   }
   
-
-
 ### Get Iterative Fractions
   k_num = length(k)
   k_num_counter = length(k)
@@ -169,41 +157,51 @@ plotINT2 <- function(x , xlab = "" , main = "" , log = FALSE
   }
   
 
-  HR <- unname(exp( b + sp2))
+  LIN <- unname(b + sp2)
 }
 
-## HR Spline for More than 3 Knots 
-
-rcsHR_knot_more_than_3 <- function(var2values , model , data=NULL , var1 , var2
-  , ci=TRUE , conf = 0.95 , ci.method = "delta"
-  , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , fixedknot = FALSE , ...) {
-
-## Check correct class for model
-  if( !any( c("cph","coxph") %in% class(model) ) ){
-    stop("Cubic spline Cox model must be run with rms::cph or survival::coxph")
+## LINEAR Spline for More than 3 Knots 
+rcsLIN_knot_more_than_3 <- function(var2values , model , data=NULL , var1 , var2
+                  , ci=TRUE , conf = 0.95 , ci.method = "delta"
+                  , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
+  # Check correct class for model
+  if( !any( c("Glm","glm") %in% class(model) ) ){
+    stop("Cubic spline Logistic model must be run with rms::Glm or stats::glm")
+  }
+  # Check correct family
+  if(!( "gaussian" %in% model$family$family | "quasi" %in% model$family$family)){
+      stop("model of class glm but not family gaussian nor quasi")
+  } else {
+    if("glm" %in% class(model) && !"Glm" %in% class(model)){
+      modelClass <- "glm"
+    } else {
+      modelClass <- "Glm"
+    }
   }
   if(!is.numeric(var2values)){
     stop("var2values must be a numeric vector")
   }
   x <- var2values
-  
   if(missing(data)){
     if(is.null(model$x)){
-      if("bootstrap" %in% ci.method || class(model)[1] == "coxph"){
-        stop("Missing data")
-      }
+      stop("Missing data")
     } else {
       data <- model$x
     }
   }
-
   if(!all(c(var1,var2) %in% colnames(data) )){
     stop("var1 or var2 not present in the data")
   }
+  # Check that var1 is a 0/1, if not check if the mean is 0
+  # if(!all(data[[var1]] %in% c(0,1,NA))){
+  #   if(!isTRUE(all.equal(mean(data[[var1]] , na.rm =TRUE),0))){
+  #     warning("var1 is not centered on 0 nor a 0/1 variable, results are always reported for a 0 to 1 change in var1.")
+  #   }
+  # }
 
 
   coefMod <- coef(model)
-  if("cph" %in% class(model)){
+  if(modelClass == "Glm"){
     k <- model$Design$parms[[var2]]
     separator <- " * "
   } else {
@@ -215,7 +213,7 @@ rcsHR_knot_more_than_3 <- function(var2values , model , data=NULL , var1 , var2
     indices <- length(grep(paste0("^", var2, "'*$"), names(coefMod)))+1
     k <- attributes(rms::rcs(data[[var2]], indices))$parms
   }
-
+  
 ### Get Iterative Fractions
   k_num = length(k)
   k_num_counter = length(k)
@@ -301,9 +299,9 @@ rcsHR_knot_more_than_3 <- function(var2values , model , data=NULL , var1 , var2
   }
   
 
-  HR <- unname(exp( b + sp2))
+  LIN <- unname( b + sp2)
 
-  if(ci){
+ if(ci){
     alpha <- qnorm( 1 - (1-conf)/2)
     if(ci.method == "delta"){
       # This creates a vector like x1 , x2 , x3 , x7 , x8
@@ -318,7 +316,7 @@ rcsHR_knot_more_than_3 <- function(var2values , model , data=NULL , var1 , var2
         }
       
 
-      HRci <- t(vapply( seq_len(length(x)) , function(i) {
+      LINci <- t(vapply( seq_len(length(x)) , function(i) {
         x_i <- x[i]
        numDems <- length(grep("formula_terms", ls(.GlobalEnv)))
 
@@ -333,23 +331,24 @@ rcsHR_knot_more_than_3 <- function(var2values , model , data=NULL , var1 , var2
           formula_parts <- c(formula_parts, paste0("+ ", last_terms[j+1], "*(", numDem_i, "))"))
       }
        }
+       
       formula = paste(formula_parts, collapse = " ")
 
         SE <- NULL
         try(SE<-msm::deltamethod(as.formula(formula), coefMod, vcovMod), silent = TRUE)
         if(is.null(SE)){
-          return(c(HR[i] , NA , NA , NA))
+          return(c(LIN[i] , NA , NA , NA))
         }
-        up<-exp(log(HR[i])+alpha*SE)
-        lo<-exp(log(HR[i])-alpha*SE)
-        c(HR[i] , lo , up , SE)
+        up<-LIN[i]+alpha*SE
+        lo<-LIN[i]-alpha*SE
+        c(LIN[i] , lo , up , SE)
       } , numeric(4)))
-      HRci <- cbind( Value = x , HRci)
-      rownames(HRci) <- x
-      colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U" , "SE")
-      HRci <- as.data.frame(HRci)
-      # class(HRci) <- c("HR" , class(HRci))
-      return(HRci)
+      LINci <- cbind( Value = x , LINci)
+      rownames(LINci) <- x
+      colnames(LINci) <- c("Value" , "LIN" , "CI_L" , "CI_U" , "SE")
+      LINci <- as.data.frame(LINci)
+      # class(LINci) <- c("LIN" , class(LINci))
+      return(LINci)
     } else if(ci.method == "bootstrap"){
       if(missing(parallel)){
         parallel <- "multicore"
@@ -357,10 +356,10 @@ rcsHR_knot_more_than_3 <- function(var2values , model , data=NULL , var1 , var2
       if(missing(R)){
         R <- 100
       }
-      myBoot <- boot::boot(data = data, statistic = .bootrcsHR_knot_more_than_3, x = x , model = model
-                  , R = R , parallel = parallel, var1 = var1 , var2 = var2 , k = k , fixedknot = fixedknot)
+      myBoot <- boot::boot(data = data, statistic = .bootrcsLIN, x = x , model = model
+                  , R = R , parallel = parallel, var1 = var1 , var2 = var2 )
       SE <- apply(myBoot$t , 2 , sd)
-      HRci <- t(vapply( seq_len(length(x)) , function(idx) {
+      LINci <- t(vapply( seq_len(length(x)) , function(idx) {
         bci <- boot::boot.ci(boot.out = myBoot,  index = idx , type = ci.boot.method , conf = conf)
         if(ci.boot.method %in% "norm"){
           c(bci$t0 , bci$normal[2] , bci$normal[3] , SE = SE[idx])
@@ -368,19 +367,18 @@ rcsHR_knot_more_than_3 <- function(var2values , model , data=NULL , var1 , var2
           c(bci$t0 , bci[[4]][4] , bci[[4]][5] , SE = SE[idx])
         }
       } , numeric(4)))
-      HRci <- cbind(x , HRci)
-      colnames(HRci) <- c("Value" , "HR" , "CI_L" , "CI_U" , "SE")
-      rownames(HRci) <- x
-      HRci <- as.data.frame(HRci)
-      # class(HRci) <- c("HR" , class(HRci))
-      return(HRci)
+      LINci <- cbind(x , LINci)
+      colnames(LINci) <- c("Value" , "LIN" , "CI_L" , "CI_U" , "SE")
+      rownames(LINci) <- x
+      LINci <- as.data.frame(LINci)
+
+      return(LINci)
     } else {
       stop("Only delta and bootstrap are valid CI methods")
     }
   } else {
-    HR <- data.frame(Value = x , HR = HR)
-    # class(HR) <- c("HR",class(HR))
-    return(HR)
+    LIN <- data.frame(Value = x , LIN = LIN)
+    return(LIN)
   }
 }
 
@@ -395,163 +393,163 @@ library(magrittr)
 umaru <- interactionRCS::umaru
 
 ## 3 Knots DELTA result
-myformula3 <- Surv(time, censor) ~ treat*rcs(age, 3) + site + nonwhite + ivdrug
+myformula3 <- beckscore ~ treat*rcs(age, 3) + site + nonwhite + ivdrug
 # Find the 3 knots to test if hardcoding works
 my3k <- attributes(rms::rcs(umaru$age , 3))$parms
-myformula3hard <- Surv(time, censor) ~ treat*rcs(age, c(24, 32, 40)) + site + nonwhite + ivdrug
+myformula3hard <- beckscore ~ treat*rcs(age, c(24, 32, 40)) + site + nonwhite + ivdrug
 # Try both cph and coxph
 mymodel3 <- list(
-  model3_cph = cph(myformula3 , data = umaru , x = TRUE , y=TRUE)
-  ,model3_coxph = coxph(myformula3 , data = umaru , x = TRUE , y=TRUE)
-  ,model3_cph_hard = cph(myformula3hard , data = umaru , x = TRUE , y=TRUE)
-  ,model3_coxph_hard = coxph(myformula3hard , data = umaru , x = TRUE , y=TRUE)
+  model3_Glm = Glm(myformula3 , data = umaru )
+  ,model3_glm = glm(myformula3 , data = umaru , family = "gaussian")
+  ,model3_Glm_hard = Glm(myformula3hard , data = umaru )
+  ,model3_glm_hard = glm(myformula3hard , data = umaru , family = "gaussian")
 )
 # Set boundaries
 maxmin <- min(umaru$age):max(umaru$age)
 # Original
-HR_rcs_delta <- lapply(names(mymodel3[c(1,2)]), function(modmod) {
-  rcsHR( var2values = maxmin , model = mymodel3[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "delta")
-}) %>% setNames(c("Original CPH" , "Original COXPH"))
+LIN_rcs_delta <- lapply(names(mymodel3[c(1,2)]), function(modmod) {
+  rcsLIN( var2values = maxmin , model = mymodel3[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "delta")
+}) %>% setNames(c("Original Glm" , "Original glm"))
 # New
-HR_rcs_delta2 <- lapply(names(mymodel3) , function(modmod) {
-  rcsHR_knot_more_than_3( var2values = maxmin
+LIN_rcs_delta2 <- lapply(names(mymodel3) , function(modmod) {
+  rcsLIN_knot_more_than_3( var2values = maxmin
                      , model = mymodel3[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "delta")
 }) %>% setNames(names(mymodel3))
 
-pdf("extra/knots3_delta.pdf" , width = 8 , height = 12)
+pdf("extra/LIN_knots3_delta.pdf" , width = 8 , height = 12)
 par(mfrow=c(4,2))
-for(i in names(HR_rcs_delta)){
-  plotINT2(HR_rcs_delta[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta)){
+  plotINT2(LIN_rcs_delta[[i]]  , main = i , ylim = c(-8,12))
 }
-for(i in names(HR_rcs_delta2)){
-  plotINT2(HR_rcs_delta2[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta2)){
+  plotINT2(LIN_rcs_delta2[[i]]  , main = i , ylim = c(-8,12))
 }
 dev.off()
 
 ## 3 Knots bootstrap results with fixed and not fixed knots
-set.seed(12345)
+set.seed(123)
 # Original
-HR_rcs_delta <- lapply(names(mymodel3[c(1,2)]), function(modmod) {
-  rcsHR( var2values = maxmin , model = mymodel3[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap")
-}) %>% setNames(c("Original CPH" , "Original COXPH"))
+LIN_rcs_delta <- lapply(names(mymodel3[c(2)]), function(modmod) {
+  out <- NULL
+  try(out <- rcsLIN( var2values = maxmin , model = mymodel3[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap"))
+  return(out)
+}) %>% setNames(c("Original glm"))
 # New
-HR_rcs_delta2 <- lapply(c(names(mymodel3[c(1,2)])) , function(modmod) {
-  rcsHR_knot_more_than_3( var2values = maxmin
+LIN_rcs_delta2 <- lapply(c(names(mymodel3[c(1,2)])) , function(modmod) {
+  rcsLIN_knot_more_than_3( var2values = maxmin
                      , model = mymodel3[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap" , fixedknot = FALSE)
-}) %>% setNames(c("New CPH" , "New COXPH"))
-HR_rcs_delta3 <- lapply(c(names(mymodel3[c(1,2)])) , function(modmod) {
-  rcsHR_knot_more_than_3( var2values = maxmin
+}) %>% setNames(c("New Glm" , "New glm"))
+LIN_rcs_delta3 <- lapply(c(names(mymodel3[c(1,2)])) , function(modmod) {
+  rcsLIN_knot_more_than_3( var2values = maxmin
                      , model = mymodel3[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap" , fixedknot = TRUE)
-}) %>% setNames(c("New CPH knot fixed" , "New COXPH knot fixed"))
+}) %>% setNames(c("New Glm knot fixed" , "New glm knot fixed"))
 
-pdf("extra/knots3_bootstrap.pdf" , width = 8 , height = 12)
+pdf("extra/LIN_knots3_bootstrap.pdf" , width = 8 , height = 12)
 par(mfrow=c(4,2))
-for(i in names(HR_rcs_delta)){
-  plotINT2(HR_rcs_delta[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta)){
+  plotINT2(LIN_rcs_delta[[i]]  , main = i , ylim = c(-8,12))
 }
-for(i in names(HR_rcs_delta2)){
-  plotINT2(HR_rcs_delta2[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta2)){
+  plotINT2(LIN_rcs_delta2[[i]]  , main = i , ylim = c(-8,12))
 }
-for(i in names(HR_rcs_delta3)){
-  plotINT2(HR_rcs_delta3[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta3)){
+  plotINT2(LIN_rcs_delta3[[i]]  , main = i , ylim = c(-8,12))
 }
 dev.off()
 
 # 4 knots
 ## 4 Knots DELTA result
-myformula4 <- Surv(time, censor) ~ treat*rcs(age, 4) + site + nonwhite + ivdrug
+myformula4 <- beckscore ~ treat*rcs(age, 4) + site + nonwhite + ivdrug
 # Find the 4 knots to test if hardcoding works
 my4k <- attributes(rms::rcs(umaru$age , 4))$parms
-myformula4hard <- Surv(time, censor) ~ treat*rcs(age, c(20, 29, 35 , 50)) + site + nonwhite + ivdrug
-# Try both cph and coxph
+myformula4hard <- beckscore ~ treat*rcs(age, c(23, 29, 35 , 43)) + site + nonwhite + ivdrug
+# Try both Glm and glm
 mymodel4 <- list(
-  model4_cph = cph(myformula4 , data = umaru , x = TRUE , y=TRUE)
-  ,model4_coxph = coxph(myformula4 , data = umaru , x = TRUE , y=TRUE)
-  ,model4_cph_hard = cph(myformula4hard , data = umaru , x = TRUE , y=TRUE)
-  ,model4_coxph_hard = coxph(myformula4hard , data = umaru , x = TRUE , y=TRUE)
+  model4_Glm = Glm(myformula4 , data = umaru )
+  ,model4_glm = glm(myformula4 , data = umaru , family = "gaussian")
+  ,model4_Glm_hard = Glm(myformula4hard , data = umaru )
+  ,model4_glm_hard = glm(myformula4hard , data = umaru , family = "gaussian")
 )
 # Set boundaries
 maxmin <- min(umaru$age):max(umaru$age)
 # New
-HR_rcs_delta2 <- lapply(names(mymodel4) , function(modmod) {
-  rcsHR_knot_more_than_3( var2values = maxmin
+LIN_rcs_delta2 <- lapply(names(mymodel4) , function(modmod) {
+  rcsLIN_knot_more_than_3( var2values = maxmin
                      , model = mymodel4[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "delta")
 }) %>% setNames(names(mymodel4))
 
-pdf("extra/knots4_delta.pdf" , width = 8 , height = 12)
+pdf("extra/LIN_knots4_delta.pdf" , width = 8 , height = 12)
 par(mfrow=c(2,2))
-for(i in names(HR_rcs_delta2)){
-  plotINT2(HR_rcs_delta2[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta2)){
+  plotINT2(LIN_rcs_delta2[[i]]  , main = i , ylim = c(-8,12))
 }
 dev.off()
 
 # Bootstrap
-HR_rcs_delta2 <- lapply(names(mymodel4)[1:2] , function(modmod) {
-  rcsHR_knot_more_than_3( var2values = maxmin
-                     , model = mymodel4[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap" , R=100)
-}) %>% setNames(c("New CPH" , "New COXPH"))
-HR_rcs_delta2f <- lapply(names(mymodel4)[1:2] , function(modmod) {
-  rcsHR_knot_more_than_3( var2values = maxmin
-                     , model = mymodel4[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap" , fixedknot = TRUE)
-}) %>% setNames(c("New CPH knot fixed" , "New COXPH knot fixed"))
+LIN_rcs_delta2 <- lapply(names(mymodel4)[1:2] , function(modmod) {
+  rcsLIN_knot_more_than_3( var2values = maxmin
+                     , model = mymodel4[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap" , R=300)
+}) %>% setNames(c("New Glm" , "New glm"))
+LIN_rcs_delta2f <- lapply(names(mymodel4)[1:2] , function(modmod) {
+  rcsLIN_knot_more_than_3( var2values = maxmin
+                     , model = mymodel4[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap" , fixedknot = TRUE , R=300)
+}) %>% setNames(c("New Glm knot fixed" , "New glm knot fixed"))
 
-pdf("knots4_bootstrap.pdf" , width = 8 , height = 12)
+pdf("extra/LIN_knots4_bootstrap.pdf" , width = 8 , height = 12)
 par(mfrow=c(2,2))
-for(i in names(HR_rcs_delta2)){
-  plotINT2(HR_rcs_delta2[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta2)){
+  plotINT2(LIN_rcs_delta2[[i]]  , main = i , ylim = c(-8,12))
 }
-for(i in names(HR_rcs_delta2f)){
-  plotINT2(HR_rcs_delta2f[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta2f)){
+  plotINT2(LIN_rcs_delta2f[[i]]  , main = i , ylim = c(-8,12))
 }
 dev.off()
 
 # 5 knots
 ## 5 Knots DELTA result
-myformula5 <- Surv(time, censor) ~ treat*rcs(age, 5) + site + nonwhite + ivdrug
+myformula5 <- beckscore ~ treat*rcs(age, 5) + site + nonwhite + ivdrug
 # Find the 5 knots to test if hardcoding works
 my5k <- attributes(rms::rcs(umaru$age , 5))$parms
-myformula5hard <- Surv(time, censor) ~ treat*rcs(age, c(23, 28, 32 , 36 , 43)) + site + nonwhite + ivdrug
-# Try both cph and coxph
+myformula5hard <- beckscore ~ treat*rcs(age, c(23, 28, 32 , 36 , 43)) + site + nonwhite + ivdrug
+# Try both Glm and glm
 mymodel5 <- list(
-  model5_cph = cph(myformula5 , data = umaru , x = TRUE , y=TRUE)
-  ,model5_coxph = coxph(myformula5 , data = umaru , x = TRUE , y=TRUE)
-  ,model5_cph_hard = cph(myformula5hard , data = umaru , x = TRUE , y=TRUE)
-  ,model5_coxph_hard = coxph(myformula5hard , data = umaru , x = TRUE , y=TRUE)
+  model5_Glm = Glm(myformula5 , data = umaru )
+  ,model5_glm = glm(myformula5 , data = umaru , family = "gaussian")
+  ,model5_Glm_hard = Glm(myformula5hard , data = umaru )
+  ,model5_glm_hard = glm(myformula5hard , data = umaru , family = "gaussian")
 )
 # Set boundaries
 maxmin <- min(umaru$age):max(umaru$age)
 
-HR_rcs_delta2 <- lapply(names(mymodel5) , function(modmod) {
-  rcsHR_knot_more_than_3( var2values = maxmin
+LIN_rcs_delta2 <- lapply(names(mymodel5) , function(modmod) {
+  rcsLIN_knot_more_than_3( var2values = maxmin
                      , model = mymodel5[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "delta")
 }) %>% setNames(names(mymodel5))
 
-pdf("knots5_delta.pdf" , width = 8 , height = 12)
+pdf("extra/LIN_knots5_delta.pdf" , width = 8 , height = 12)
 par(mfrow=c(2,2))
-for(i in names(HR_rcs_delta2)){
-  plotINT2(HR_rcs_delta2[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta2)){
+  plotINT2(LIN_rcs_delta2[[i]]  , main = i , ylim = c(-8,12))
 }
 dev.off()
 
 # Bootstrap
-HR_rcs_delta2 <- lapply(names(mymodel5)[1:2] , function(modmod) {
-  rcsHR_knot_more_than_3( var2values = maxmin
-                     , model = mymodel5[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap")
-}) %>% setNames(c("New CPH" , "New COXPH"))
-HR_rcs_delta2f <- lapply(names(mymodel5)[1:2] , function(modmod) {
-  rcsHR_knot_more_than_3( var2values = maxmin
-                     , model = mymodel5[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap" , fixedknot = TRUE)
-}) %>% setNames(c("New CPH knot fixed" , "New COXPH knot fixed"))
+LIN_rcs_delta2 <- lapply(names(mymodel5)[1:2] , function(modmod) {
+  rcsLIN_knot_more_than_3( var2values = maxmin
+                     , model = mymodel5[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap" , R=300)
+}) %>% setNames(c("New Glm" , "New glm"))
+LIN_rcs_delta2f <- lapply(names(mymodel5)[1:2] , function(modmod) {
+  rcsLIN_knot_more_than_3( var2values = maxmin
+                     , model = mymodel5[[modmod]] , data = umaru , var1 ="treat", var2="age" ,ci.method = "bootstrap" , fixedknot = TRUE , R=300)
+}) %>% setNames(c("New Glm knot fixed" , "New glm knot fixed"))
 
-pdf("knots5_bootstrap.pdf" , width = 8 , height = 12)
+pdf("extra/LIN_knots5_bootstrap.pdf" , width = 8 , height = 12)
 par(mfrow=c(2,2))
-for(i in names(HR_rcs_delta2)){
-  plotINT2(HR_rcs_delta2[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta2)){
+  plotINT2(LIN_rcs_delta2[[i]]  , main = i , ylim = c(-8,12))
 }
-for(i in names(HR_rcs_delta2f)){
-  plotINT2(HR_rcs_delta2f[[i]]  , main = i , ylim = c(0,3))
+for(i in names(LIN_rcs_delta2f)){
+  plotINT2(LIN_rcs_delta2f[[i]]  , main = i , ylim = c(-8,12))
 }
 dev.off()
-
-
 ```
