@@ -1,6 +1,6 @@
 ---
 title: "Introduction to the *interactionRCS* package"
-subtitle: "Giorgio Melloni, Andrea Bellavia"
+subtitle: "Giorgio Melloni, Hong Xiong, Andrea Bellavia"
 author: "[TIMI study group](https://timi.org/)"
 date: 'Last update: `r format(Sys.Date(),format="%B %d, %Y")`'
 output: 
