@@ -4,3 +4,4 @@ figure*
 paper*
 .RData
 .Rhistory
+.DS_Store

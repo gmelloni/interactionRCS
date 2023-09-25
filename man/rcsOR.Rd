@@ -2,7 +2,7 @@
 % Please edit documentation in R/orcubspline.R
 \name{rcsOR}
 \alias{rcsOR}
-\title{Restricted cubic spline interaction OR}
+\title{Restricted cubic spline interaction OR for more than 3 knots}
 \usage{
 rcsOR(
   var2values,
@@ -46,11 +46,10 @@ rcsOR(
 }
 \value{
 if ci = FALSE, a dataframe with initial values and OR
-, if ci = TRUE a dataframe with 5 columns, initial values, OR, lower CI, upper CI and SE
 }
 \description{
 Generate OR values in a logistic model for a 1 unit increase in a variable at
-specified points of another interacting variable splined with rcs(df = 3)
+specified points of another interacting variable splined with rcs(df >= 3)
 }
 \examples{
 library(rms)
@@ -60,8 +59,8 @@ data(PimaIndiansDiabetes)
 PimaIndiansDiabetes$age <- PimaIndiansDiabetes$age/5
 # Recode diabetes as 0/1
 PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
-myformula <- diabetes ~ mass + age * rcs( glucose , 3 )
-model <- lrm(myformula , data = PimaIndiansDiabetes )
+myformula <- diabetes ~ mass + age * rcs( glucose , 4 )
+model <- glm(myformula , data = PimaIndiansDiabetes , family = "binomial")
 rcsOR( var2values = 20:80
        , model = model , data = PimaIndiansDiabetes , var1 ="age", var2="glucose"
        , ci=TRUE , conf = 0.95 , ci.method = "delta")

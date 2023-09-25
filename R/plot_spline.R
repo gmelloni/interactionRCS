@@ -13,8 +13,10 @@
 #' @param main plot title
 #' @param log if TRUE, plot the estimate in log scale
 #' @param line1 if TRUE, plot horizontal line on 1 or 0 (if log=TRUE)
-#' @param color line color. Default dodgerblue
-#' @return simple splined plot of estimates of var1 at var2 values
+#' @param linecolor line color. Default dodgerblue
+#' @param cicolor confidence intervals color. Default gray
+#' @param ... other parameters for plot
+#' @return simple pspline smoothed splined plot of estimates of 1 unit increase in var1 at var2 values
 #' @examples
 #' library(rms)
 #' library(survival)
@@ -29,8 +31,8 @@
 #' @importFrom graphics par lines abline plot
 #' @export
 plotINT <- function(x , xlab = "" , main = "" , log = FALSE
-                  , ylab = NULL ,line1 = TRUE
-                  , color="dodgerblue"){
+                  , ylab = NULL , line1 = TRUE
+                  , linecolor="dodgerblue" , cicolor = "darkgray" , ...){
   if(is.null(ylab)){
     ylab <- colnames(x)[2]
     if(ylab == "LIN"){
@@ -40,26 +42,38 @@ plotINT <- function(x , xlab = "" , main = "" , log = FALSE
       ylab <- paste0(ylab , " (log scale)")
     }
   }
-  if("CI_L" %in% colnames(x) && "CI_U" %in% colnames(x)){
-    ylim <- c(min(x$CI_L , na.rm = TRUE),max(x$CI_U , na.rm = TRUE))
+  ylim <- list(...)$ylim
+  if(is.null(ylim)){
+    if("CI_L" %in% colnames(x) && "CI_U" %in% colnames(x)){
+      ylim <- c(min(x$CI_L , na.rm = TRUE),max(x$CI_U , na.rm = TRUE))
+    } else {
+      ylim <- c(min(x[ , 2] , na.rm = TRUE),max(x[ , 2] , na.rm = TRUE))
+    }
+    plot( x$Value , x[ , 2]
+          , type="n" , xlab = xlab
+          , ylab = ylab
+          , log = if(log) "y" else ""
+          , ylim = ylim
+          , main = main
+          , ...)
   } else {
-    ylim <- c(min(x[ , 2] , na.rm = TRUE),max(x[ , 2] , na.rm = TRUE))
+    plot( x$Value , x[ , 2]
+          , type="n" , xlab = xlab
+          , ylab = ylab
+          , log = if(log) "y" else ""
+          , main = main
+          , ...)
   }
-  plot( x$Value , x[ , 2]
-        , type="n" , xlab = xlab
-        , ylab = ylab
-        , log = if(log) "y" else ""
-        , ylim = ylim
-        , main = main)
+
   if(line1) {
     if(log)
       abline(h=0 , lty = 3 , lwd = 1 , col = "black")
     else
       abline(h=1 , lty = 3 , lwd = 1 , col = "black")
   }
-  lines( pspline::sm.spline(x$Value , x[ , 2]) , col = color , lty = 1 , lwd = 3 )
+  lines( pspline::sm.spline(x$Value , x[ , 2]) , col = linecolor , lty = 1 , lwd = 3 )
   if("CI_L" %in% colnames(x) && "CI_U" %in% colnames(x)){
-    lines( pspline::sm.spline(x$Value , x$CI_L) , col = "darkgray" , lty = 2 , lwd = 2 )
-    lines( pspline::sm.spline(x$Value , x$CI_U) , col = "darkgray" , lty = 2 , lwd = 2 )
+    lines( pspline::sm.spline(x$Value , x$CI_L) , col = cicolor , lty = 2 , lwd = 2 )
+    lines( pspline::sm.spline(x$Value , x$CI_U) , col = cicolor , lty = 2 , lwd = 2 )
   }
 }

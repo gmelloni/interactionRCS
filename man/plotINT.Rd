@@ -11,7 +11,9 @@ plotINT(
   log = FALSE,
   ylab = NULL,
   line1 = TRUE,
-  color = "dodgerblue"
+  linecolor = "dodgerblue",
+  cicolor = "darkgray",
+  ...
 )
 }
 \arguments{
@@ -27,10 +29,14 @@ plotINT(
 
 \item{line1}{if TRUE, plot horizontal line on 1 or 0 (if log=TRUE)}
 
-\item{color}{line color. Default dodgerblue}
+\item{linecolor}{line color. Default dodgerblue}
+
+\item{cicolor}{confidence intervals color. Default gray}
+
+\item{...}{other parameters for plot}
 }
 \value{
-simple splined plot of estimates of var1 at var2 values
+simple pspline smoothed splined plot of estimates of 1 unit increase in var1 at var2 values
 }
 \description{
 Create a spline var2 by 1 unit increase of var1
