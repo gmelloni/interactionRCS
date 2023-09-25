@@ -2,7 +2,7 @@
 % Please edit documentation in R/hrcubspline.R
 \name{rcsHR}
 \alias{rcsHR}
-\title{Restricted cubic spline interaction HR}
+\title{Restricted cubic spline interaction HR for more than 3 knots}
 \usage{
 rcsHR(
   var2values,
@@ -50,13 +50,13 @@ if ci = FALSE, a dataframe with initial values and HR
 }
 \description{
 Generate HR values in a Cox model for a 1 unit increase in a variable at
-specified points of another interacting variable splined with rcs(df = 3)
+specified points of another interacting variable splined with rcs(df >= 3)
 }
 \examples{
 library(survival)
 library(rms)
 data(cancer)
-myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age,3)*sex
+myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age,4)*sex
 model <- cph(myformula , data = lung )
 rcsHR( var2values = 40:80
        , model = model , data = lung , var1 ="sex", var2="age"

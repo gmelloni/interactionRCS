@@ -1,3 +1,46 @@
+##########################
+# Testing multiple knots #
+##########################
+
+# library(rms)
+# library(mlbench)
+# data(PimaIndiansDiabetes)
+# # Set age on a 5-year scale
+# PimaIndiansDiabetes$age <- PimaIndiansDiabetes$age/5
+# # Recode diabetes as 0/1
+# PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
+# # Logistic model predicting diabetes over BMI, age and glucose
+# par(mfrow=c(2,2))
+# for(i in 3:6){
+#   myformula <- diabetes ~ mass + age * rcs( glucose , i)
+#   model <- glm(myformula , data = PimaIndiansDiabetes , family = "binomial")
+#   plotINT(rcsOR( var2values = 20:150
+#                  , model = model , data = PimaIndiansDiabetes , var1 ="age", var2="glucose"
+#                  , ci=TRUE , conf = 0.95 , ci.method = "bootstrap" , ci.boot.method = "norm") , ylim = c(0,3) , main = i)
+# }
+# # Linear model predicting BMI over diabetes, age and glucose
+# par(mfrow=c(2,2))
+# for(i in 3:6){
+#   myformula2 <- mass ~ diabetes + age * rcs( glucose , i )
+#   model2 <- glm(myformula2 , data = PimaIndiansDiabetes , family = "gaussian")
+#   plotINT(intEST( var2values = 20:150
+#                   , model = model2 , data = PimaIndiansDiabetes , var1 ="age", var2="glucose"
+#                   , ci=TRUE , conf = 0.95 , ci.method = "bootstrap") , ylim = c(-1,3) , main = i)
+# }
+# # Cox model
+# library(survival)
+# library(rms)
+# data(cancer)
+# cancer$sex <- ifelse(cancer$sex==2 , 0 , cancer$sex)
+# par(mfrow=c(2,2))
+# for(i in 3:6){
+#   myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age,i)*sex
+#   model <- cph(myformula , data = lung )
+#   plotINT(intEST( var2values = 40:80
+#                   , model = model , data = lung , var1 ="sex", var2="age"
+#                   , ci=TRUE , conf = 0.95 , ci.method = "bootstrap" , R=100), ylim = c(-1,3) , main = i)
+# }
+
 # library(survival)
 # library(rms)
 # data(cancer)

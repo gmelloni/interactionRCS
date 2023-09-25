@@ -1,52 +1,139 @@
-# The boot function is the same for rcsOR
-.bootrcsHR <- function(data, idx , x , model , var1 , var2){
-  df <- data[idx, ]
-  # mymodel <- cph(model$sformula, data=df)
+.bootrcsHR_knot_more_than_3 <- function(data, idx , x , model , var1 , var2){
+  form_str <- deparse(formula(model), width.cutoff = 500)
+  has_vector_rcs <- "^.+ ~ .+\\s*\\*?\\s*rcs\\([^,]+, c\\(.*\\)\\).*$"
+  matches_vector_rcs <- stringr::str_detect(form_str, has_vector_rcs)
+  df <- data[idx,]
   mycall <- model$call
   mycall <- pryr::modify_call(mycall , list(data=quote(df)))
-  myformula <- model$sformula
-  # mymodel <- cph(model$sformula, data=df)
+  if("cph" %in% class(model) | "lrm" %in% class(model)){
+    myformula <- model$sformula
+  } else {
+    myformula <- model$formula
+  }
+
   mymodel <- eval(mycall)
   coefMod <- coef(mymodel)
-  ##### SHOULD THE NODES BE GLOBAL OR RUN SPECIFIC? HERE SPECIFIC
-  if("cph" %in% class(model)){
+
+  if("cph" %in% class(model) | "lrm" %in% class(model)){
     separator <- " * "
     k <- mymodel$Design$parms[[var2]]
   } else {
-    separator <- ":"
-    k <- attributes(rms::rcs(df[[var2]], 3))$parms
-    rcsTerm <- grep(":" , grep("rcs\\(" , attributes(mymodel$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
-    names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
+    if (matches_vector_rcs) {
+      matches <- stringr::str_match(form_str, "rcs\\((.*)\\)")
+      rcs_content <- matches[, 2]
+      split_str <- strsplit(rcs_content, ",")[[1]]
+      var <- trimws(split_str[1])
+      knots_str <- paste(split_str[-1], collapse = ",")
+      knots <- eval(parse(text = paste("c(", knots_str, ")", sep="")))
+      k <- knots
+      separator <- ":"
+      rcsTerm <- grep(":" , grep("rcs\\(" , attributes(mymodel$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
+      names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
+    }   else {
+      separator <- ":"
+      # need to recreate the knot sequence for object of class coxph
+      # remove the rcs part from the names of the variables in case of a class coxph model
+      rcsTerm <- grep(":" , grep("rcs\\(" , attributes(model$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
+      names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
+      indices <- length(grep(paste0("^", var2, "'*$"), names(coefMod)))+1
+      k <- attributes(rms::rcs(df[[var2]], indices))$parms
+    }
   }
-  k2k1 <- (k[2] - k[1])/(k[3] - k[2])
-  k3k1 <- (k[3] - k[1])/(k[3] - k[2])
-  # Could be rcs(var2)*var1 or var1*rcs(var2). We search for both versions
-  myvars <- intersect( c(var1 , var2
-                         , paste0(var2 , "'")
-                         , paste(var1 , var2 , sep = separator)
-                         , paste(var2 , var1 , sep = separator)
-                         , paste(var1 , paste0(var2 , "'") , sep = separator)
-                         , paste(paste0(var2 , "'"),var1 , sep = separator))
-                       , names(coefMod))
+
+
+  ### Get Iterative Fractions
+  k_num = length(k)
+  k_num_counter = length(k)
+
+  fraction_list = list()
+  j = 1
+  while (k_num_counter >2) {
+    temp_frac = (k[k_num] - k[j]) / (k[k_num]-k[k_num-1])
+    temp_frac_2 = (k[k_num-1] - k[j]) / (k[k_num]-k[k_num-1])
+    fraction_list = c(fraction_list,temp_frac)
+    fraction_list = c(fraction_list,temp_frac_2)
+    j = j + 1
+    k_num_counter = k_num_counter - 1
+  }
+
+  ### New Variable Definition
+  var_list <- c(var1, var2, paste(var1 , var2 , sep = separator),paste(var2 , var1 , sep = separator))
+
+  for(i in 1:(length(k)-2)){
+    var2_mod <- paste0(var2, paste(rep("'", i), collapse = ""))
+    var_list <- c(var_list,
+                  paste0(var2_mod),
+                  paste(var1, var2_mod, sep = separator),
+                  paste(var2_mod, var1, sep = separator))
+  }
+
+
+  myvars <- sort(intersect(var_list, names(coefMod)))
+
   mycoef <- coefMod[  myvars ]
-  mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
-  a <- mycoef[ c(var2 , paste0(var2,"'"))]
+  mycoefWhich <- sort(sapply( myvars , function(v) which( names(coefMod) %in% v )))
+
+  num_ticks <- length(k)-2
   b <- mycoef[ var1 ]
-  l <- mycoef[ setdiff(myvars , c(var2 , paste0(var2,"'") , var1)) ]
-  numer <- vapply(x , function(i) {
-    max(i - k[1],0)^3  - (max(i - k[2],0)^3)*k3k1 + (max(i - k[3],0)^3)*k2k1
-  } , numeric(1))
-  denom <- (k[3] - k[1])^2
-  numDem <- numer/denom
-  sp1 <- vapply(x , function(i) a[1]*i , numeric(1)) + a[2]*numDem
-  sp2 <- vapply(x , function(i) l[1]*i , numeric(1)) + l[2]*numDem
+  a <- NULL
+
+  for (i in 0:num_ticks) {
+
+    var_name <- paste0(var2, paste(rep("'", i), collapse = ""))
+
+    if (var_name %in% names(mycoef)) {
+      a <- c(a, mycoef[var_name])
+    }
+  }
+
+  l <- mycoef[setdiff(setdiff(myvars, c(var1, names(a))), c(var1, names(a)))]
+
+  ### Get Iterative Terms
+
+  k_num = length(k)
+  k_num_counter = length(k)
+  term_list = list()
+  j = 1
+  frac_index = 1
+  while (k_num_counter >2) {
+    numer <- vapply(x , function(i) {
+      max(i - k[j],0)^3  - (max(i - k[k_num-1],0)^3)*fraction_list[[frac_index]] + (max(i -             k[k_num],0)^3)*fraction_list[[frac_index+1]]
+    } , numeric(1))
+    denom <- (k[k_num] - k[1])^2
+    numDem <- numer/denom
+
+    term_list = c(term_list,numDem)
+
+    k_num_counter = k_num_counter - 1
+    frac_index = frac_index + 2
+    j = j + 1
+  }
+
+  n <- length(term_list)
+  elements_per_iteration <- length(x)
+
+  subsets <- list()
+
+  for (i in seq(1, n, by = elements_per_iteration)) {
+    end <- min(i + elements_per_iteration - 1, n)
+    subsets[[length(subsets) + 1]] <- term_list[i:end]
+  }
+
+  sp2 <- vapply(x , function(i) l[1]*i , numeric(1))
+
+  for(i in 2:length(l)) {
+    sp2 <- sp2 + l[[i]] * unlist(subsets[i-1])
+  }
+
+
   HR <- unname(exp( b + sp2))
 }
 
-#' Restricted cubic spline interaction HR
+
+#' Restricted cubic spline interaction HR for more than 3 knots
 #'
 #' Generate HR values in a Cox model for a 1 unit increase in a variable at
-#' specified points of another interacting variable splined with rcs(df = 3)
+#' specified points of another interacting variable splined with rcs(df >= 3)
 #'
 #' @param var2values numeric vector of var2 points to estimate
 #' @param model model of class cph or coxph. If data is NULL, the function expects to find the data in model$x.
@@ -64,7 +151,7 @@
 #' library(survival)
 #' library(rms)
 #' data(cancer)
-#' myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age,3)*sex
+#' myformula <- Surv(time, status) ~ ph.karno + ph.ecog + rcs(age,4)*sex
 #' model <- cph(myformula , data = lung )
 #' rcsHR( var2values = 40:80
 #'        , model = model , data = lung , var1 ="sex", var2="age"
@@ -76,12 +163,17 @@
 #' @importFrom pryr modify_call
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
-#' @importFrom stats vcov coef as.formula qnorm sd
+#' @importFrom stats vcov coef as.formula qnorm sd formula
+#' @importFrom stringr str_detect str_match
+#' @importFrom utils tail
 #' @export
+
+
 rcsHR <- function(var2values , model , data=NULL , var1 , var2
-  , ci=TRUE , conf = 0.95 , ci.method = "delta"
-  , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
-  # Check correct class for model
+                  , ci=TRUE , conf = 0.95 , ci.method = "delta"
+                  , ci.boot.method = "perc" , R = 100 , parallel = "multicore" , ...) {
+
+  ### Check correct class for model
   if( !any( c("cph","coxph") %in% class(model) ) ){
     stop("Cubic spline Cox model must be run with rms::cph or survival::coxph")
   }
@@ -89,6 +181,7 @@ rcsHR <- function(var2values , model , data=NULL , var1 , var2
     stop("var2values must be a numeric vector")
   }
   x <- var2values
+
   if(missing(data)){
     if(is.null(model$x)){
       if("bootstrap" %in% ci.method || class(model)[1] == "coxph"){
@@ -98,55 +191,129 @@ rcsHR <- function(var2values , model , data=NULL , var1 , var2
       data <- model$x
     }
   }
+
   if(!all(c(var1,var2) %in% colnames(data) )){
     stop("var1 or var2 not present in the data")
   }
-  # Check that var1 is a 0/1, if not check if the mean is 0
-  # if(!all(data[[var1]] %in% c(0,1,NA))){
-  #   if(!isTRUE(all.equal(mean(data[[var1]] , na.rm =TRUE),0))){
-  #     warning("var1 is not centered on 0 nor a 0/1 variable, results are always reported for a 0 to 1 change in var1.")
-  #   }
-  # }
+
+  form_str <- deparse(formula(model), width.cutoff = 500)
+  has_vector_rcs <- "^.+ ~ .+\\s*\\*?\\s*rcs\\([^,]+, c\\(.*\\)\\).*$"
+  matches_vector_rcs <- stringr::str_detect(form_str, has_vector_rcs)
 
   coefMod <- coef(model)
-  if("cph" %in% class(model)){
-    k <- model$Design$parms[[var2]]
+
+  if("cph" %in% class(model) | "lrm" %in% class(model)){
     separator <- " * "
+    k <- model$Design$parms[[var2]]
   } else {
-    separator <- ":"
-    # need to recreate the knot sequence for object of class coxph
-    k <- attributes(rms::rcs(data[[var2]], 3))$parms
-    # remove the rcs part from the names of the variables in case of a class coxph model
-    rcsTerm <- grep(":" , grep("rcs\\(" , attributes(model$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
-    names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
+    if (matches_vector_rcs) {
+      matches <- stringr::str_match(form_str, "rcs\\((.*)\\)")
+      rcs_content <- matches[, 2]
+      split_str <- strsplit(rcs_content, ",")[[1]]
+      var <- trimws(split_str[1])
+      knots_str <- paste(split_str[-1], collapse = ",")
+      knots <- eval(parse(text = paste("c(", knots_str, ")", sep="")))
+      k <- knots
+      separator <- ":"
+      rcsTerm <- grep(":" , grep("rcs\\(" , attributes(model$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
+      names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
+    }   else {
+      separator <- ":"
+      # need to recreate the knot sequence for object of class coxph
+      # remove the rcs part from the names of the variables in case of a class coxph model
+      rcsTerm <- grep(":" , grep("rcs\\(" , attributes(model$terms)$term.labels , value = TRUE) , invert = TRUE , value = TRUE)
+      names(coefMod) <- gsub(rcsTerm , "" , names(coefMod) , fixed = TRUE)
+      indices <- length(grep(paste0("^", var2, "'*$"), names(coefMod)))+1
+      k <- attributes(rms::rcs(data[[var2]], indices))$parms
+    }
   }
-  k2k1 <- (k[2] - k[1])/(k[3] - k[2])
-  k3k1 <- (k[3] - k[1])/(k[3] - k[2])
-  # Extract parameters
-  # Could be rcs(var2)*var1 or var1*rcs(var2). We search for both versions
-  myvars <- intersect( c(var1 , var2
-                        , paste0(var2 , "'")
-                        , paste(var1 , var2 , sep = separator)
-                        , paste(var2 , var1 , sep = separator)
-                        , paste(var1 , paste0(var2 , "'") , sep = separator)
-                        , paste(paste0(var2 , "'"),var1 , sep = separator))
-                      , names(coefMod))
-  if(length(myvars)!=5) stop("either var1 or var2 is not in the interaction or is not numeric")
+
+  ### Get Iterative Fractions
+  k_num = length(k)
+  k_num_counter = length(k)
+
+  fraction_list = list()
+  j = 1
+  while (k_num_counter >2) {
+    temp_frac = (k[k_num] - k[j]) / (k[k_num]-k[k_num-1])
+    temp_frac_2 = (k[k_num-1] - k[j]) / (k[k_num]-k[k_num-1])
+    fraction_list = c(fraction_list,temp_frac)
+    fraction_list = c(fraction_list,temp_frac_2)
+    j = j + 1
+    k_num_counter = k_num_counter - 1
+  }
+
+  ### New Variable Definition
+  var_list <- c(var1, var2, paste(var1 , var2 , sep = separator),paste(var2 , var1 , sep = separator))
+
+  for(i in 1:(length(k)-2)){
+    var2_mod <- paste0(var2, paste(rep("'", i), collapse = ""))
+    var_list <- c(var_list,
+                  paste0(var2_mod),
+                  paste(var1, var2_mod, sep = separator),
+                  paste(var2_mod, var1, sep = separator))
+  }
+
+
+  myvars <- sort(intersect(var_list, names(coefMod)))
+
   mycoef <- coefMod[  myvars ]
-  mycoefWhich <- sapply( myvars , function(v) which( names(coefMod) %in% v ))
-  a <- mycoef[ c(var2 , paste0(var2,"'"))]
+  mycoefWhich <- sort(sapply( myvars , function(v) which( names(coefMod) %in% v )))
+
+  num_ticks <- length(k)-2
   b <- mycoef[ var1 ]
-  l <- mycoef[ setdiff(myvars , c(var2 , paste0(var2,"'") , var1)) ]
-  numer <- vapply(x , function(i) {
-    max(i - k[1],0)^3  - (max(i - k[2],0)^3)*k3k1 + (max(i - k[3],0)^3)*k2k1
-  } , numeric(1))
-  denom <- (k[3] - k[1])^2
-  numDem <- numer/denom
-  sp1 <- vapply(x , function(i) a[1]*i , numeric(1)) + a[2]*numDem
-  sp2 <- vapply(x , function(i) l[1]*i , numeric(1)) + l[2]*numDem
+  a <- NULL
+
+  for (i in 0:num_ticks) {
+
+    var_name <- paste0(var2, paste(rep("'", i), collapse = ""))
+
+    if (var_name %in% names(mycoef)) {
+      a <- c(a, mycoef[var_name])
+    }
+  }
+
+  l <- mycoef[setdiff(setdiff(myvars, c(var1, names(a))), c(var1, names(a)))]
+
+  ### Get Iterative Terms
+
+  k_num = length(k)
+  k_num_counter = length(k)
+  term_list = list()
+  j = 1
+  frac_index = 1
+  while (k_num_counter >2) {
+    numer <- vapply(x , function(i) {
+      max(i - k[j],0)^3  - (max(i - k[k_num-1],0)^3)*fraction_list[[frac_index]] + (max(i -             k[k_num],0)^3)*fraction_list[[frac_index+1]]
+    } , numeric(1))
+    denom <- (k[k_num] - k[1])^2
+    numDem <- numer/denom
+
+    term_list = c(term_list,numDem)
+
+    k_num_counter = k_num_counter - 1
+    frac_index = frac_index + 2
+    j = j + 1
+  }
+
+  n <- length(term_list)
+  elements_per_iteration <- length(x)
+
+  subsets <- list()
+
+  for (i in seq(1, n, by = elements_per_iteration)) {
+    end <- min(i + elements_per_iteration - 1, n)
+    subsets[[length(subsets) + 1]] <- term_list[i:end]
+  }
+
+  sp2 <- vapply(x , function(i) l[1]*i , numeric(1))
+
+  for(i in 2:length(l)) {
+    sp2 <- sp2 + l[[i]] * unlist(subsets[i-1])
+  }
+
+
   HR <- unname(exp( b + sp2))
-  # HR <- unname(exp( b + sp1 + sp2)/exp(sp1))
-  # HR <- unname(exp( b*x1 + sp1 + sp2*x1)/exp(b*x2 + sp1 + sp2*x2))
 
   if(ci){
     alpha <- qnorm( 1 - (1-conf)/2)
@@ -154,21 +321,40 @@ rcsHR <- function(var2values , model , data=NULL , var1 , var2
       # This creates a vector like x1 , x2 , x3 , x7 , x8
       # that tells you the position of the regressor as it appears in the model
       xNum <- paste0("x" , mycoefWhich)
+      last_terms = tail(xNum,k_num-1)
       vcovMod <- vcov(model)
+      xNum_var1 <- paste0("x" , mycoefWhich[var1])
+      formula_terms <- lapply(1:length(subsets) , function(k) {
+        subsets[k]
+      })
+      names(formula_terms) <- paste0("formula_terms" , 1:length(subsets))
+      # for (k in 1:length(subsets)) {
+      #   assign(paste0("formula_terms", k), subsets[k], envir = .GlobalEnv)
+      # }
+
+
       HRci <- t(vapply( seq_len(length(x)) , function(i) {
         x_i <- x[i]
-        numDem_i <- numDem[i]
-        # myform <- paste0("~(", xNum[1] , " + " , xNum[2] , "*(" , x_i
-        #                , ") + " , xNum[3] , "*(" , numDem_i
-        #                , ") + " , xNum[4] , "*(" , x_i
-        #                , ") + " , xNum[5] , "*(" , numDem_i
-        #                , "))/(" , xNum[2] , "*(" , x_i
-        #                , ") + " , xNum[3] , "*(" , numDem_i , "))")
-        myform <- paste0("~(", xNum[1] , " + ", xNum[4] , "*(" , x_i
-                         , ") + " , xNum[5] , "*(" , numDem_i
-                         , "))")
+        # numDems <- length(grep("formula_terms", ls(.GlobalEnv)))
+        numDems <- length(formula_terms)
+
+        formula_parts <- c(paste0("~(", xNum_var1, " + ", last_terms[1], "*(", x_i, ")"))
+
+        for (j in 1:numDems) {
+          if (j!=numDems){
+            # numDem_i <- unlist(get(paste0("formula_terms", j)))[i]
+            numDem_i <- unlist(formula_terms[paste0("formula_terms", j)])[i]
+            formula_parts <- c(formula_parts, paste0("+ ", last_terms[j+1], "*(", numDem_i, ")"))}
+          else{
+            # numDem_i <- unlist(get(paste0("formula_terms", j)))[i]
+            numDem_i <- unlist(formula_terms[paste0("formula_terms", j)])[i]
+            formula_parts <- c(formula_parts, paste0("+ ", last_terms[j+1], "*(", numDem_i, "))"))
+          }
+        }
+        formula <- paste(formula_parts, collapse = " ")
+
         SE <- NULL
-        try(SE<-msm::deltamethod(as.formula(myform), coefMod, vcovMod) , silent = TRUE)
+        try(SE<-msm::deltamethod(as.formula(formula), coefMod, vcovMod), silent = TRUE)
         if(is.null(SE)){
           return(c(HR[i] , NA , NA , NA))
         }
@@ -189,8 +375,8 @@ rcsHR <- function(var2values , model , data=NULL , var1 , var2
       if(missing(R)){
         R <- 100
       }
-      myBoot <- boot::boot(data = data, statistic = .bootrcsHR, x = x , model = model
-                  , R = R , parallel = parallel, var1 = var1 , var2 = var2 )
+      myBoot <- boot::boot(data = data, statistic = .bootrcsHR_knot_more_than_3, x = x , model = model
+                           , R = R , parallel = parallel, var1 = var1 , var2 = var2 )
       SE <- apply(myBoot$t , 2 , sd)
       HRci <- t(vapply( seq_len(length(x)) , function(idx) {
         bci <- boot::boot.ci(boot.out = myBoot,  index = idx , type = ci.boot.method , conf = conf)

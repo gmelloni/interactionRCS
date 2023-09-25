@@ -2,7 +2,7 @@
 % Please edit documentation in R/lincubspline.R
 \name{rcsLIN}
 \alias{rcsLIN}
-\title{Restricted cubic spline interaction linear estimates}
+\title{Restricted cubic spline interaction linear estimates for more than 3 knots}
 \usage{
 rcsLIN(
   var2values,
@@ -50,7 +50,7 @@ if ci = FALSE, a dataframe with initial values and linear estimates
 }
 \description{
 Generate estimates in a linear model for a 1 unit increase in a variable at
-specified points of another interacting variable splined with rcs(df = 3)
+specified points of another interacting variable splined with rcs(df >= 3)
 }
 \examples{
 library(rms)
@@ -58,7 +58,7 @@ library(mlbench)
 data(PimaIndiansDiabetes)
 # Recode diabetes as 0/1
 PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
-myformula <- glucose ~ mass + diabetes * rcs(age, 3)
+myformula <- glucose ~ mass + diabetes * rcs(age, 4)
 model <- glm(myformula , data = PimaIndiansDiabetes , family="gaussian")
 # Show the effect on glucose of being diabetic at age 20 to 80
 rcsLIN( var2values = 20:80

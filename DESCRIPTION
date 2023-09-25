@@ -1,8 +1,8 @@
 Package: interactionRCS
 Type: Package
 Title: Calculate Estimates in Models with Interaction
-Version: 0.1.0
-Date: 2022-02-25
+Version: 0.2.0
+Date: 2023-09-25
 Authors@R: 
     c(person(given = "Giorgio",
             family = "Melloni",
@@ -13,7 +13,12 @@ Authors@R:
             family = "Bellavia",
             role = c("aut"),
             email = "abellavia@bwh.harvard.edu",
-            comment = c(ORCID = "0000-0003-4988-4532")))
+            comment = c(ORCID = "0000-0003-4988-4532")),
+    person(given = "Hong",
+            family = "Xiong",
+            role = c("aut"),
+            email = "kevinxiong@g.ucla.edu",
+            comment = c(ORCID = "0000-0003-4402-7478")))	   
 Description: A tool to calculate and plot estimates from models 
     in which an interaction between the main predictor and a continuous covariate has been specified.
     Methods used in the package refer to Harrell Jr FE (2015, ISBN:9783319330396); 
@@ -23,24 +28,25 @@ Depends:
     R (>= 3.6)
 Imports:
     graphics,
-    grDevices,
     stats,
     utils,
-    methods,
-    parallel,
     survival,
     msm,
     rms,
     boot,
     pspline,
     pryr,
-    mlbench
+    stringr
 Suggests:
     knitr,
     rmarkdown,
-    dplyr
+    dplyr,
+    mlbench,
+    grDevices,
+    parallel,
+    methods
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
 Encoding: UTF-8
 LazyData: true
