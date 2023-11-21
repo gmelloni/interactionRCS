@@ -1,7 +1,7 @@
 Package: interactionRCS
 Type: Package
 Title: Calculate Estimates in Models with Interaction
-Version: 0.2.0
+Version: 0.1.1
 Date: 2023-09-25
 Authors@R: 
     c(person(given = "Giorgio",
