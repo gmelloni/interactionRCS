@@ -5,7 +5,7 @@ author: "[TIMI study group](https://timi.org/)"
 date: 'Last update: `r format(Sys.Date(),format="%B %d, %Y")`'
 output: 
   html_document:
-    theme: spacelab
+    theme: flatly
     toc: true
     toc_depth: 2
     toc_float: true
@@ -22,7 +22,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(survival)
 library(rms)
 library(interactionRCS)
-
 data(umaru, package = "interactionRCS")
 ```
 
@@ -35,15 +34,9 @@ The `interactionRCS` package is designed to facilitate interpretation and presen
 
 Functions within the `interactionRCS` package require that a regression model has already been estimated and model results be provided as an object. Models with linear and log-linear interactions can be run with standard function (i.e. `glm` for linear and logistic, `coxph` for survival). To model interactions with restricted cubic splines, however, `interactionRCS` requires models to be run with more flexible functions from the `rms` package (specifically `Glm`, `lrm`, and `cph`). 
 
-The main functions of `interactionRCS` are:
+The main function of `interactionRCS` is `intEST`, which provides point estimates and confidence intervals for the effect of $X$ over levels of $Z$ when an interaction is included in the model, either as a (log-)linear term or flexibly modeled with `rcs`. The following options must be specified: 
 
-* `rcsLIN` and `linLIN`, for plotting main effects after estimation of a linear model 
-* `rcsOR` and `loglinOR`, for plotting OR after estimation of a logistic model 
-* `rcsHR` and `loglinHR`, for plotting HR after estimation of a Cox model 
-
-The `rcs-` functions will provide point estimates and confidence intervals for the  effect of $X$ when $Z$ is modeled with restricted cubic splines (specifically using 3 knots). The `lin-` and `loglin-` functions will instead provide effects of $X$ in the setting where $Z$ is included in the model as a continuous covariate thus assuming a linear (for linear regression) or log-liner (for logistic and COX) additive interactions. For all functions, the following options must be specified: 
-
-* `model`: the model previously run 
+* `model`: the model previously run (`Glm`,`lrm`, `cph`, or `glm`, `coxph` from models without splines)
 * `var1`: the name of the main predictor of interest ($X$)
 * `var2`: the name of the continuous predictor interacting with `var1` ($Z$)
 * `var2values`: the values of $var2$ for which the HR of $var1$ should be calculated
@@ -57,7 +50,6 @@ Additional options include:
 * `R` (default=100 - only if `method="bootstrap"`) : number of bootstrap iterations
 * `parallel` (default "multicore" - only if `method="bootstrap"`): see `boot.ci` reference 
 
-The most recent update of the package has an additional function `intEST` that includes all previous function and can be used with any specified model (the function will understand whether the model is linear, logistic, or Cox, and whether the interactions is (log)linear or splines, and run the specific function out of the 6 available). 
 
 An additional function `plotINT` is also implemented to provide a graphical display of the results and only require the `rcs-`, `loglin-`, or `lin-` results as object. 
 
@@ -225,20 +217,20 @@ or by using the Delta method
 
 ## Restricted cubic splines interaction model
 
-`interactionRCS` allows the continuous covariate $Z$ to be flexibly modeled with restricted cubic splines, with 3 knots ($k_1, k_2, k_3$). 
+`interactionRCS` allows the continuous covariate $Z$ to be flexibly modeled with restricted cubic splines, with any given of number ($p$) of knots ($t_1, t_2, t_3, \dots, t_p$). 
 
 ### Cox PH regression
 The interaction model, in this setting, takes the form:
 
 $h(t|x,z,c)=h_0\cdot\exp(\beta_1x+sp(z)+sp_2(z\cdot x))$  
 
-where
+If 3 knots are specified:
 
-$sp(z)=\alpha_1z+\alpha_2\cdot[\frac{(z-k_1)^3_+-(z-k_2)^3_+\cdot\frac{ k_2-k_1}{ k_3-k_2} +(z-k_3)^3\cdot\frac{k_3-k_1}{k_3-k_2}}{(k_3-k_1)^2}]$
+$sp(z)=\alpha_1z+\alpha_2\cdot[\frac{(z-t_1)^3_+-(z-t_2)^3_+\cdot\frac{ t_3-t_1}{ t_3-t_2} +(z-t_3)^3_+\cdot\frac{t_2-t_1}{t_3-t_2}}{(t_3-t_1)^2}]$
 
 and 
 
-$sp_2(z\cdot x)=\gamma_1xz+\gamma_2x\cdot[\frac{(z-k_1)^3_+-(z-k_2)^3_+\cdot\frac{ k_3-k_1}{ k_3-k_2} +(z-k_3)^3\cdot\frac{k_2-k_1}{k_3-k_2}}{(k_3-k_1)^2}]$
+$sp_2(z\cdot x)=\gamma_1x+\gamma_2x\cdot[\frac{(z-t_1)^3_+-(z-t_2)^3_+\cdot\frac{ t_3-t_1}{ t_3-t_2} +(z-t_3)^3_+\cdot\frac{t_2-t_1}{t_3-t_2}}{(t_3-t_1)^2}]$
 
 
 After estimation of the model, we want to predict the HR for $X$ over levels of $Z$. This is given by
@@ -279,3 +271,42 @@ $E[Y|x=1,z]-E[Y=0|x,z]=(\beta_0+\beta_1+sp(z)+sp_2(z)) -(\beta_0+sp(z))=\beta_1+
 which will be plotted against $Z$
 
 The $SE$ can be derived by using the delta method to calculate $SE(\beta_1+sp_2(z))$
+
+
+
+### More than 3 knots
+
+Based on Harrell's book (chapter 2-23), we derive equations for more than 3 knots
+
+The general splines function for $k$ knots is:
+
+$f(X)=\beta_0+\beta_1\cdot X_1+\beta_2\cdot X_2+\dots+\beta_{k-1}\cdot X_{k-1}$
+
+where $X_1=X$ and for $j=1,\dots,k-2$,
+
+$X_{j+1}=\frac{(z-t_j)^3_+-(z-t_{k-1})^3_+\cdot\frac{ t_k-t_j}{t_k-t_{k-1}} +(z-t_k)^3_+\cdot\frac{t_{k-1}-t_j}{t_k-t_{k-1}}}{(t_k-t_1)^2}$
+
+The Cox model with $k=4$ will therefore be:
+
+$h(t|x,z,c)=h_0\cdot\exp(\beta_1x+sp(z)+sp_2(z\cdot x))$  
+
+where
+
+
+$sp(z)=\alpha_1z+\alpha_2\cdot[\frac{(z-t_1)^3_+-(z-t_3)^3_+\cdot\frac{ t_4-t_1}{ t_4-t_3} +(z-t_3)^3_+\cdot\frac{t_3-t_1}{t_4-t_3}}{(t_4-t_1)^2}]+\alpha_3\cdot[\frac{(z-t_2)^3_+-(z-t_3)^3_+\cdot\frac{ t_4-t_2}{ t_4-t_3} +(z-t_4)^3_+\cdot\frac{t_3-t_2}{t_4-t_3}}{(t_4-t_1)^2}]$
+
+and 
+
+$sp_2(z\cdot x)=\gamma_1x+\gamma_2x\cdot[\frac{(z-t_1)^3_+-(z-t_3)^3_+\cdot\frac{ t_4-t_1}{ t_4-t_3} +(z-t_4)^3_+\cdot\frac{t_3-t_2}{t_4-t_3}}{(t_3-t_1)^2}]+\gamma_3x\cdot[\frac{(z-t_2)^3_+-(z-t_3)^3_+\cdot\frac{ t_4-t_2}{ t_4-t_3} +(z-t_4)^3_+\cdot\frac{t_3-t_2}{t_4-t_3}}{(t_4-t_1)^2}]$
+
+The generic Cox model will be:
+
+$h(t|x,z,c)=h_0\cdot\exp(\beta_1x+sp(z)+sp_2(z\cdot x))$  
+
+where
+
+$sp(z)=\alpha_1z+\alpha_2\cdot[\frac{(z-t_j)^3_+-(z-t_{k-1})^3_+\cdot\frac{ t_k-t_j}{t_k-t_{k-1}} +(z-t_k)^3_+\cdot\frac{t_{k-1}-t_j}{t_k-t_{k-1}}}{(t_k-t_1)^2}]+\alpha_3\cdot[\frac{(z-t_j)^3_+-(z-t_{k-1})^3_+\cdot\frac{ t_k-t_j}{t_k-t_{k-1}} +(z-t_k)^3_+\cdot\frac{t_{k-1}-t_j}{t_k-t_{k-1}}}{(t_k-t_1)^2}]$
+
+and 
+
+$sp_2(z\cdot x)=\gamma_1x+\gamma_2x\cdot[\frac{(z-t_j)^3_+-(z-t_{k-1})^3_+\cdot\frac{ t_k-t_j}{t_k-t_{k-1}} +(z-t_k)^3_+\cdot\frac{t_{k-1}-t_j}{t_k-t_{k-1}}}{(t_k-t_1)^2}]+\gamma_3x\cdot[\frac{(z-t_j)^3_+-(z-t_{k-1})^3_+\cdot\frac{ t_k-t_j}{t_k-t_{k-1}} +(z-t_k)^3_+\cdot\frac{t_{k-1}-t_j}{t_k-t_{k-1}}}{(t_k-t_1)^2}]$
