@@ -21,5 +21,5 @@
 #'   \item{ivdrug}{Prior IV drug treatment}
 #'   \item{nonwhite}{1 if non white, 0 otherwise}
 #' }
-#' @source <ftp://ftp.wiley.com/public/sci_tech_med/logistic>
+#' @source <https://ftp.idu.ac.id/wp-content/uploads/ebook/ip/REGRESI%20LOGISTIK/epdf.pub_applied-logistic-regression-wiley-series-in-probab.pdf>
 "umaru"
