@@ -66,7 +66,7 @@ intEST <- function(var2values , model , data , var1 , var2
     }
   } else if(any(c("Glm" , "glm") %in% modelClass)){
     family <- model$family$family
-    if(family == "gaussian"){
+    if(family %in% c("gaussian","quasi")){
       if(isRCS){
         argg[[1]] <- as.name("rcsLIN")
       } else {

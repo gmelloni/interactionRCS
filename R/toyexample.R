@@ -2,6 +2,17 @@
 # Testing multiple knots #
 ##########################
 
+# library(eventglm)
+# library(survival)
+# library(rms)
+# data(cancer)
+# cancer$sex <- ifelse(cancer$sex==2 , 0 , cancer$sex)
+# myformula <- Surv(time, status) ~ age*sex
+# cuminc <- cumincglm(myformula, data=cancer, time = 365, link = "identity", model.censoring="coxph")
+# cumincINT <- intEST( var2values = 40:80
+#                      , model = cuminc , data = cancer , var1 ="sex", var2="age"
+#                      , ci=TRUE , conf = 0.95 , ci.method = "delta" , R=100)
+# plotINT(cumincINT)
 # library(rms)
 # library(mlbench)
 # data(PimaIndiansDiabetes)
