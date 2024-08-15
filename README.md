@@ -1,5 +1,7 @@
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/gmelloni/interactionRCS/workflows/R-CMD-check/badge.svg)](https://github.com/gmelloni/interactionRCS/actions)
+[![Total-downloads](https://cranlogs.r-pkg.org/badges/grand-total/interactionRCS)](https://cranlogs.r-pkg.org/badges/grand-total/interactionRCS)
+[![Monthly-downloads](https://cranlogs.r-pkg.org/badges/interactionRCS?color=orange)](https://cranlogs.r-pkg.org/badges/interactionRCS?color=orange)
 <!-- badges: end -->
 
 # interactionRCS
