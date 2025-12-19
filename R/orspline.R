@@ -59,7 +59,7 @@
 #' @return if ci = FALSE, a vector of estimate of length(var2values),
 #' if ci = TRUE a dataframe with 5 columns, initial values, OR, lower CI, upper CI and SE
 #' @importFrom rms cph
-#' @importFrom rlang call_modify
+#' @importFrom rlang call_modify expr
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
 #' @importFrom stats vcov coef as.formula qnorm sd glm

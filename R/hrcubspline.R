@@ -161,7 +161,7 @@
 #' , if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
 #' @importFrom rms cph rcs
 #' @importFrom survival coxph
-#' @importFrom rlang call_modify
+#' @importFrom rlang call_modify expr
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
 #' @importFrom stats vcov coef as.formula qnorm sd formula

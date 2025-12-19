@@ -58,7 +58,7 @@
 #' @return if ci = FALSE, a vector of estimate of length(var2values),
 #' if ci = TRUE a dataframe with 5 columns, initial values, linear estimates, lower CI, upper CI and SE
 #' @importFrom rms Glm
-#' @importFrom rlang call_modify
+#' @importFrom rlang call_modify expr
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
 #' @importFrom stats vcov coef as.formula qnorm sd glm

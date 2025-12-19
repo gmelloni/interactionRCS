@@ -40,7 +40,7 @@
 #' , if ci = TRUE a dataframe with 5 columns, initial values, OR/HR/linear estimates, lower CI, upper CI and SE
 #' @importFrom rms lrm rcs cph
 #' @importFrom survival coxph
-#' @importFrom rlang call_modify
+#' @importFrom rlang call_modify expr
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
 #' @importFrom stats vcov coef as.formula qnorm sd glm

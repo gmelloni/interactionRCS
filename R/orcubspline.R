@@ -172,7 +172,7 @@
 #'        , ci=TRUE , conf = 0.95 , ci.method = "delta")
 #' @return if ci = FALSE, a dataframe with initial values and OR
 #' @importFrom rms lrm rcs
-#' @importFrom rlang call_modify
+#' @importFrom rlang call_modify expr
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
 #' @importFrom stats vcov coef as.formula qnorm sd formula
