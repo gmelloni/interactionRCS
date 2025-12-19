@@ -6,7 +6,7 @@
 
 # interactionRCS
 #### A tool to calculate and plot Hazard Ratios, Odds Ratios or linear estimates in a simple or restricted cubic splined interaction model
-#### Version 1.1 (February 25, 2022)
+#### Version 1.2 (December, 2025)
 ---
 
 ### Description
