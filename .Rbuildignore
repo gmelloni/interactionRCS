@@ -7,3 +7,6 @@ paper*
 .RData
 .Rhistory
 .DS_Store
+^CRAN-SUBMISSION$
+^cran-comments\.md$
+^revdep$
