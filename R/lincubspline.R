@@ -4,7 +4,8 @@
   matches_vector_rcs <- stringr::str_detect(form_str, has_vector_rcs)
   df <- data[idx, ]
   mycall <- model$call
-  mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  # mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  mycall <- rlang::call_modify(mycall , data=rlang::expr(df))
   mymodel <- eval(mycall)
   coefMod <- coef(mymodel)
 
@@ -161,7 +162,7 @@
 #' @return if ci = FALSE, a dataframe with initial values and linear estimates
 #' , if ci = TRUE a dataframe with 5 columns, initial values, linear estimates, lower CI, upper CI and SE
 #' @importFrom rms Glm
-#' @importFrom pryr modify_call
+#' @importFrom rlang call_modify
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
 #' @importFrom stats vcov coef as.formula qnorm sd glm formula

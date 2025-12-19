@@ -25,7 +25,7 @@ A data frame with 575 rows and 10 variables
 }
 }
 \source{
-\url{ftp://ftp.wiley.com/public/sci_tech_med/logistic}
+\url{https://ftp.idu.ac.id/wp-content/uploads/ebook/ip/REGRESI\%20LOGISTIK/epdf.pub_applied-logistic-regression-wiley-series-in-probab.pdf}
 }
 \usage{
 umaru

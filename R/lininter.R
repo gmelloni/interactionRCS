@@ -1,7 +1,8 @@
 .bootintLIN <- function(data, idx , x , model , var1 , var2){
   df <- data[idx, ]
   mycall <- model$call
-  mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  # mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  mycall <- rlang::call_modify(mycall , data=rlang::expr(df))
   # myformula <- model$sformula
   mymodel <- eval(mycall)
   # mymodel <- cph(model$sformula, data=df)
@@ -57,7 +58,7 @@
 #' @return if ci = FALSE, a vector of estimate of length(var2values),
 #' if ci = TRUE a dataframe with 5 columns, initial values, linear estimates, lower CI, upper CI and SE
 #' @importFrom rms Glm
-#' @importFrom pryr modify_call
+#' @importFrom rlang call_modify
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
 #' @importFrom stats vcov coef as.formula qnorm sd glm

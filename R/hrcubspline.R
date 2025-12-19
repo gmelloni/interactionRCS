@@ -4,7 +4,8 @@
   matches_vector_rcs <- stringr::str_detect(form_str, has_vector_rcs)
   df <- data[idx,]
   mycall <- model$call
-  mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  # mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  mycall <- rlang::call_modify(mycall , data=rlang::expr(df))
   if("cph" %in% class(model) | "lrm" %in% class(model)){
     myformula <- model$sformula
   } else {
@@ -160,7 +161,7 @@
 #' , if ci = TRUE a dataframe with 5 columns, initial values, HR, lower CI, upper CI and SE
 #' @importFrom rms cph rcs
 #' @importFrom survival coxph
-#' @importFrom pryr modify_call
+#' @importFrom rlang call_modify
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
 #' @importFrom stats vcov coef as.formula qnorm sd formula

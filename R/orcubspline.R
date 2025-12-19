@@ -14,7 +14,8 @@
   matches_vector_rcs <- stringr::str_detect(form_str, has_vector_rcs)
 
   mycall <- model$call
-  mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  # mycall <- pryr::modify_call(mycall , list(data=quote(df)))
+  mycall <- rlang::call_modify(mycall , data=rlang::expr(df))
 
   mymodel <- eval(mycall)
   coefMod <- coef(mymodel)
@@ -171,7 +172,7 @@
 #'        , ci=TRUE , conf = 0.95 , ci.method = "delta")
 #' @return if ci = FALSE, a dataframe with initial values and OR
 #' @importFrom rms lrm rcs
-#' @importFrom pryr modify_call
+#' @importFrom rlang call_modify
 #' @importFrom msm deltamethod
 #' @importFrom boot boot boot.ci
 #' @importFrom stats vcov coef as.formula qnorm sd formula
