@@ -22,7 +22,7 @@ loglinOR(
 \arguments{
 \item{var2values}{numeric vector of var2 points to estimate}
 
-\item{model}{model of class lrm Glm or glm. If data is NULL, the function expects to find the data in model$x}
+\item{model}{model of class lrm Glm or glm (family binomial, poisson or quasipoisson). If data is NULL, the function expects to find the data in model$x}
 
 \item{data}{data used in the model. If absent, it will attempt to recover the data from the model object. Only used for bootstrap CI}
 
@@ -46,23 +46,30 @@ loglinOR(
 }
 \value{
 if ci = FALSE, a vector of estimate of length(var2values),
-if ci = TRUE a dataframe with 5 columns, initial values, OR, lower CI, upper CI and SE
+if ci = TRUE a dataframe with 5 columns, initial values, OR (RR for Poisson models), lower CI, upper CI and SE
 }
 \description{
 Generate OR values for a 1 unit increase in a variable at
-specified points of another interacting variable in a simple logistic interaction model
+specified points of another interacting variable in a simple logistic interaction model.
+For Poisson (or quasipoisson) models of class glm or Glm, rate ratios (RR) are returned instead.
 }
 \examples{
 library(rms)
 library(mlbench)
-data(PimaIndiansDiabetes)
+data(SynthDiabetes)
 # Set age on a 5-year scale
-PimaIndiansDiabetes$age <- PimaIndiansDiabetes$age/5
+SynthDiabetes$age <- SynthDiabetes$age/5
 # Recode diabetes as 0/1
-PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
+SynthDiabetes$diabetes <- ifelse(SynthDiabetes$diabetes=="pos" , 1 , 0)
 myformula <- diabetes ~ mass + age * glucose
-model <- glm(myformula , data = PimaIndiansDiabetes , family = binomial())
+model <- glm(myformula , data = SynthDiabetes , family = binomial())
 loglinOR( var2values = 20:80
-       , model = model , data = PimaIndiansDiabetes , var1 ="age", var2="glucose"
+       , model = model , data = SynthDiabetes , var1 ="age", var2="glucose"
+       , ci=TRUE , conf = 0.95 , ci.method = "delta")
+# Poisson model for a count outcome returns rate ratios (RR)
+model_pois <- glm(pregnant ~ mass + age * glucose
+                  , data = SynthDiabetes , family = poisson())
+loglinOR( var2values = 20:80
+       , model = model_pois , data = SynthDiabetes , var1 ="age", var2="glucose"
        , ci=TRUE , conf = 0.95 , ci.method = "delta")
 }

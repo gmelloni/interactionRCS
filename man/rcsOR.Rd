@@ -22,7 +22,7 @@ rcsOR(
 \arguments{
 \item{var2values}{numeric vector of var2 points to estimate}
 
-\item{model}{model of class lrm, Glm or glm family binomial. If data is NULL, the function expects to find the data in model$x.}
+\item{model}{model of class lrm, Glm or glm (family binomial, poisson or quasipoisson). If data is NULL, the function expects to find the data in model$x.}
 
 \item{data}{data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap and glm class models}
 
@@ -45,23 +45,30 @@ rcsOR(
 \item{...}{other parameters for boot}
 }
 \value{
-if ci = FALSE, a dataframe with initial values and OR
+if ci = FALSE, a dataframe with initial values and OR (RR for Poisson models)
 }
 \description{
 Generate OR values in a logistic model for a 1 unit increase in a variable at
-specified points of another interacting variable splined with rcs(df >= 3)
+specified points of another interacting variable splined with rcs(df >= 3).
+For Poisson (or quasipoisson) models of class glm or Glm, rate ratios (RR) are returned instead.
 }
 \examples{
 library(rms)
 library(mlbench)
-data(PimaIndiansDiabetes)
+data(SynthDiabetes)
 # Set age on a 5-year scale
-PimaIndiansDiabetes$age <- PimaIndiansDiabetes$age/5
+SynthDiabetes$age <- SynthDiabetes$age/5
 # Recode diabetes as 0/1
-PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
+SynthDiabetes$diabetes <- ifelse(SynthDiabetes$diabetes=="pos" , 1 , 0)
 myformula <- diabetes ~ mass + age * rcs( glucose , 4 )
-model <- glm(myformula , data = PimaIndiansDiabetes , family = "binomial")
+model <- glm(myformula , data = SynthDiabetes , family = "binomial")
 rcsOR( var2values = 20:80
-       , model = model , data = PimaIndiansDiabetes , var1 ="age", var2="glucose"
+       , model = model , data = SynthDiabetes , var1 ="age", var2="glucose"
+       , ci=TRUE , conf = 0.95 , ci.method = "delta")
+# Poisson model for a count outcome returns rate ratios (RR)
+model_pois <- glm(pregnant ~ mass + age * rcs( glucose , 4 )
+                  , data = SynthDiabetes , family = poisson())
+rcsOR( var2values = 20:80
+       , model = model_pois , data = SynthDiabetes , var1 ="age", var2="glucose"
        , ci=TRUE , conf = 0.95 , ci.method = "delta")
 }

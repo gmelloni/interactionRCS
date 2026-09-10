@@ -22,7 +22,7 @@ intEST(
 \arguments{
 \item{var2values}{numeric vector of var2 points to estimate}
 
-\item{model}{model of class cph, coxph, lrm, glm or Glm. If data is NULL, the function expects to find the data in model$x.}
+\item{model}{model of class cph, coxph, lrm, glm or Glm (for glm/Glm, family gaussian, binomial, poisson or quasipoisson). If data is NULL, the function expects to find the data in model$x.}
 
 \item{data}{data used in the model. If absent, we will attempt to recover the data from the model. Only used for bootstrap and glm class models}
 
@@ -45,31 +45,31 @@ intEST(
 \item{...}{other parameters for boot}
 }
 \value{
-if ci = FALSE, a dataframe with initial values and OR/HR/linear estimates
-, if ci = TRUE a dataframe with 5 columns, initial values, OR/HR/linear estimates, lower CI, upper CI and SE
+if ci = FALSE, a dataframe with initial values and OR/HR/RR/linear estimates
+, if ci = TRUE a dataframe with 5 columns, initial values, OR/HR/RR/linear estimates, lower CI, upper CI and SE
 }
 \description{
-This function is a dispatcher that generate OR, HR or linear estimates values for a simple or restricted cubic spline
-interaction model from a logistic, Cox or linear regression
+This function is a dispatcher that generate OR, HR, RR or linear estimates values for a simple or restricted cubic spline
+interaction model from a logistic, Cox, Poisson or linear regression
 }
 \examples{
 library(rms)
 library(mlbench)
-data(PimaIndiansDiabetes)
+data(SynthDiabetes)
 # Set age on a 5-year scale
-PimaIndiansDiabetes$age <- PimaIndiansDiabetes$age/5
+SynthDiabetes$age <- SynthDiabetes$age/5
 # Recode diabetes as 0/1
-PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
+SynthDiabetes$diabetes <- ifelse(SynthDiabetes$diabetes=="pos" , 1 , 0)
 # Logistic model predicting diabetes over BMI, age and glucose
 myformula <- diabetes ~ mass + age * rcs( glucose , 3 )
-model <- lrm(myformula , data = PimaIndiansDiabetes )
+model <- lrm(myformula , data = SynthDiabetes )
 intEST( var2values = 20:80
-       , model = model , data = PimaIndiansDiabetes , var1 ="age", var2="glucose"
+       , model = model , data = SynthDiabetes , var1 ="age", var2="glucose"
        , ci=TRUE , conf = 0.95 , ci.method = "delta")
 # Linear model predicting BMI over diabetes, age and glucose
 myformula2 <- mass ~ diabetes + age * rcs( glucose , 3 )
-model2 <- glm(myformula2 , data = PimaIndiansDiabetes , family = "gaussian")
+model2 <- glm(myformula2 , data = SynthDiabetes , family = "gaussian")
 intEST( var2values = 20:80
-       , model = model2 , data = PimaIndiansDiabetes , var1 ="age", var2="glucose"
+       , model = model2 , data = SynthDiabetes , var1 ="age", var2="glucose"
        , ci=TRUE , conf = 0.95 , ci.method = "delta")
 }
