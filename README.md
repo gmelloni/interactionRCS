@@ -6,14 +6,14 @@
 
 # interactionRCS
 #### A tool to calculate and plot Hazard Ratios, Odds Ratios or linear estimates in a simple or restricted cubic splined interaction model
-#### Version 1.2 (December, 2025)
+#### Version 1.3 (September, 2026)
 ---
 
 ### Description
-`interactionRCS` facilitates interpretation and presentation of results from a regression model (linear, logistic, Cox) where an interaction between the main predictor of interest X (binary or continuous) and another continuous covariate Z has been specified. In particular, `interactionRCS` allows for
+`interactionRCS` facilitates interpretation and presentation of results from a regression model (linear, logistic, Cox or Poisson) where an interaction between the main predictor of interest X (binary or continuous) and another continuous covariate Z has been specified. In particular, `interactionRCS` allows for
   basic interaction assessment (i.e. log-linear/linear interaction models where a product term between the two predictors is included) 
   as well as settings where the second covariate is flexibly modeled with restricted cubic splines. Confidence intervals for 
-  the predicted effect measures (beta, OR, HR) can be calculated with either bootstrap or the delta method. Lastly, `interactionRCS`
+  the predicted effect measures (beta, OR, HR, RR) can be calculated with either bootstrap or the delta method. Lastly, `interactionRCS`
   produces a plot of the effect measure over levels of the other covariate.
 
 ### Installation
@@ -29,7 +29,7 @@ library(interactionRCS)
 ```
 
 ### Usage 
-After estimating a regression model (linear, logistic, Cox) such as `model<-glm(y~ ...)` estimate and plot interactions with:
+After estimating a regression model (linear, logistic, Cox or Poisson) such as `model<-glm(y~ ...)` estimate and plot interactions with:
 
 ```
 int<-estINT(model=model, ...)
