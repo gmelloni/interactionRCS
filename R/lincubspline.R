@@ -150,14 +150,14 @@
 #' @examples
 #' library(rms)
 #' library(mlbench)
-#' data(PimaIndiansDiabetes)
+#' data(SynthDiabetes)
 #' # Recode diabetes as 0/1
-#' PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
+#' SynthDiabetes$diabetes <- ifelse(SynthDiabetes$diabetes=="pos" , 1 , 0)
 #' myformula <- glucose ~ mass + diabetes * rcs(age, 4)
-#' model <- glm(myformula , data = PimaIndiansDiabetes , family="gaussian")
+#' model <- glm(myformula , data = SynthDiabetes , family="gaussian")
 #' # Show the effect on glucose of being diabetic at age 20 to 80
 #' rcsLIN( var2values = 20:80
-#'        , model = model , data = PimaIndiansDiabetes , var1 ="diabetes", var2="age"
+#'        , model = model , data = SynthDiabetes , var1 ="diabetes", var2="age"
 #'        , ci=TRUE , conf = 0.95 , ci.method = "delta")
 #' @return if ci = FALSE, a dataframe with initial values and linear estimates
 #' , if ci = TRUE a dataframe with 5 columns, initial values, linear estimates, lower CI, upper CI and SE

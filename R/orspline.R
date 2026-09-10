@@ -28,11 +28,12 @@
 
 #' Linear interaction OR
 #'
-#' Generate OR values for a 1 unit increase in a variable at
-#' specified points of another interacting variable in a simple logistic interaction model
+#' Generate OR/RR values for a 1 unit increase in a variable at
+#' specified points of another interacting variable in a simple logistic/poisson interaction model.
+#' For Poisson (or quasipoisson) models of class glm or Glm, rate ratios (RR) are returned instead.
 #'
 #' @param var2values numeric vector of var2 points to estimate
-#' @param model model of class lrm Glm or glm. If data is NULL, the function expects to find the data in model$x
+#' @param model model of class lrm Glm or glm (family binomial, poisson or quasipoisson). If data is NULL, the function expects to find the data in model$x
 #' @param data data used in the model. If absent, it will attempt to recover the data from the model object. Only used for bootstrap CI
 #' @param var1 variable that increases by 1 unit from 0
 #' @param var2 variable to spline. var2values belong to var2
@@ -46,18 +47,24 @@
 #' @examples
 #' library(rms)
 #' library(mlbench)
-#' data(PimaIndiansDiabetes)
+#' data(SynthDiabetes)
 #' # Set age on a 5-year scale
-#' PimaIndiansDiabetes$age <- PimaIndiansDiabetes$age/5
+#' SynthDiabetes$age <- SynthDiabetes$age/5
 #' # Recode diabetes as 0/1
-#' PimaIndiansDiabetes$diabetes <- ifelse(PimaIndiansDiabetes$diabetes=="pos" , 1 , 0)
+#' SynthDiabetes$diabetes <- ifelse(SynthDiabetes$diabetes=="pos" , 1 , 0)
 #' myformula <- diabetes ~ mass + age * glucose
-#' model <- glm(myformula , data = PimaIndiansDiabetes , family = binomial())
+#' model <- glm(myformula , data = SynthDiabetes , family = binomial())
 #' loglinOR( var2values = 20:80
-#'        , model = model , data = PimaIndiansDiabetes , var1 ="age", var2="glucose"
+#'        , model = model , data = SynthDiabetes , var1 ="age", var2="glucose"
+#'        , ci=TRUE , conf = 0.95 , ci.method = "delta")
+#' # Poisson model for a count outcome returns rate ratios (RR)
+#' model_pois <- glm(pregnant ~ mass + age * glucose
+#'                   , data = SynthDiabetes , family = poisson())
+#' loglinOR( var2values = 20:80
+#'        , model = model_pois , data = SynthDiabetes , var1 ="age", var2="glucose"
 #'        , ci=TRUE , conf = 0.95 , ci.method = "delta")
 #' @return if ci = FALSE, a vector of estimate of length(var2values),
-#' if ci = TRUE a dataframe with 5 columns, initial values, OR, lower CI, upper CI and SE
+#' if ci = TRUE a dataframe with 5 columns, initial values, OR (RR for Poisson models), lower CI, upper CI and SE
 #' @importFrom rms cph
 #' @importFrom rlang call_modify expr
 #' @importFrom msm deltamethod
@@ -73,10 +80,12 @@ loglinOR <- function(var2values , model , data , var1 , var2
   }
   # Check correct family
   if(!"lrm" %in% class(model)){
-    if(!"binomial" %in% model$family$family){
-      stop("model of class glm but not family binomial")
+    if(!any(c("binomial","poisson","quasipoisson") %in% model$family$family)){
+      stop("model of class glm but not family binomial or poisson")
     }
   }
+  # Estimates are odds ratios for logistic models and rate ratios for Poisson models
+  estName <- if("lrm" %in% class(model) || model$family$family == "binomial") "OR" else "RR"
   if(!is.numeric(var2values)){
     stop("var2values must be a numeric vector")
   }
@@ -154,7 +163,7 @@ loglinOR <- function(var2values , model , data , var1 , var2
       } , numeric(4)))
       ORci <- cbind( Value = x , ORci)
       rownames(ORci) <- x
-      colnames(ORci) <- c("Value" , "OR" , "CI_L" , "CI_U" , "SE")
+      colnames(ORci) <- c("Value" , estName , "CI_L" , "CI_U" , "SE")
       ORci <- as.data.frame(ORci)
       # class(ORci) <- c("OR" , class(ORci))
       return(ORci)
@@ -179,7 +188,7 @@ loglinOR <- function(var2values , model , data , var1 , var2
         }
       } , numeric(4)))
       ORci <- cbind(x , ORci)
-      colnames(ORci) <- c("Value" , "OR" , "CI_L" , "CI_U" , "SE")
+      colnames(ORci) <- c("Value" , estName , "CI_L" , "CI_U" , "SE")
       rownames(ORci) <- x
       ORci <- as.data.frame(ORci)
       # class(ORci) <- c("OR" , class(ORci))
@@ -189,6 +198,7 @@ loglinOR <- function(var2values , model , data , var1 , var2
     }
   } else {
     OR <- data.frame(Value = x , OR = OR)
+    colnames(OR)[2] <- estName
     # class(OR) <- c("OR",class(OR))
     return(OR)
   }

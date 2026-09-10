@@ -66,9 +66,9 @@ plotINT <- function(x , xlab = "" , main = "" , log = FALSE
   }
 
   if(line1) {
-    if(log)
-      abline(h=0 , lty = 3 , lwd = 1 , col = "black")
-    else
+    # if(log)
+    #   abline(h=0 , lty = 3 , lwd = 1 , col = "black")
+    # else
       abline(h=1 , lty = 3 , lwd = 1 , col = "black")
   }
   lines( pspline::sm.spline(x$Value , x[ , 2]) , col = linecolor , lty = 1 , lwd = 3 )
