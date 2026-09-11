@@ -5,7 +5,7 @@
 <!-- badges: end -->
 
 # interactionRCS
-#### A tool to calculate and plot Hazard Ratios, Odds Ratios or linear estimates in a simple or restricted cubic splined interaction model
+#### A tool to calculate and plot Hazard Ratios, Odds Ratios Risk Ratios or linear estimates in a simple or restricted cubic splined interaction model
 #### Version 1.3 (September, 2026)
 ---
 
